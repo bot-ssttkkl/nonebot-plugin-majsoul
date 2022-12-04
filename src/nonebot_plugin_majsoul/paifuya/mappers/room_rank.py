@@ -1,6 +1,6 @@
 from typing import AbstractSet
 
-from nonebot_plugin_majsoul.data.models.room_rank import all_four_player_room_rank, \
+from ..data.models.room_rank import all_four_player_room_rank, \
     all_three_player_room_rank, \
     all_four_player_south_room_rank, all_four_player_east_room_rank, all_three_player_south_room_rank, \
     all_three_player_east_room_rank, RoomRank, all_three_player_golden_room_rank, all_four_player_golden_room_rank, \

@@ -1,12 +1,12 @@
 from typing import TextIO, Optional, AbstractSet
 
-from nonebot_plugin_majsoul.data.models.player_info import PlayerLevel
-from nonebot_plugin_majsoul.data.models.player_num import PlayerNum
-from nonebot_plugin_majsoul.data.models.player_rank import PlayerRank, PlayerMajorRank
-from nonebot_plugin_majsoul.data.models.player_stats import PlayerStats
-from nonebot_plugin_majsoul.data.models.room_rank import RoomRank
-from nonebot_plugin_majsoul.mappers.player_rank import map_player_rank
-from nonebot_plugin_majsoul.mappers.room_rank import map_room_rank
+from .player_rank import map_player_rank
+from .room_rank import map_room_rank
+from ..data.models.player_info import PlayerLevel
+from ..data.models.player_num import PlayerNum
+from ..data.models.player_rank import PlayerRank, PlayerMajorRank
+from ..data.models.player_stats import PlayerStats
+from ..data.models.room_rank import RoomRank
 
 
 def map_player_stats(sio: TextIO, stats: Optional[PlayerStats], room_rank: AbstractSet[RoomRank],

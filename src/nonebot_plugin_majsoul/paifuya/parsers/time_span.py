@@ -4,7 +4,7 @@ from typing import Optional, Tuple
 
 from monthdelta import monthdelta
 
-from nonebot_plugin_majsoul.parsers.decode_integer import decode_integer
+from nonebot_plugin_majsoul.utils.decode_integer import decode_integer
 
 
 def try_parse_time_span(raw: str) -> Optional[Tuple[datetime, datetime]]:

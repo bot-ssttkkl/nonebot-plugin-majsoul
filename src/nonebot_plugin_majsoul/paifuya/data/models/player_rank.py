@@ -2,7 +2,7 @@ from enum import Enum
 from functools import total_ordering
 from typing import NamedTuple
 
-from nonebot_plugin_majsoul.data.models.player_num import PlayerNum
+from .player_num import PlayerNum
 
 
 class PlayerMajorRank(int, Enum):

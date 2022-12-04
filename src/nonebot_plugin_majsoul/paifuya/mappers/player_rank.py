@@ -1,5 +1,5 @@
-from nonebot_plugin_majsoul.data.models.player_rank import PlayerRank, PlayerMajorRank
 from .general import map_digit
+from ..data.models.player_rank import PlayerRank, PlayerMajorRank
 
 _MAJOR_RANK_MAPPING = {
     PlayerMajorRank.novice: "初心",

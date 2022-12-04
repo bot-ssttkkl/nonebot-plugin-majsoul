@@ -1,5 +1,4 @@
 from functools import wraps
-from functools import wraps
 from typing import Type
 
 from httpx import HTTPError
@@ -7,7 +6,7 @@ from nonebot import logger
 from nonebot.exception import MatcherException, ActionFailed
 from nonebot.internal.matcher import Matcher
 
-from ...errors import BadRequestError
+from nonebot_plugin_majsoul.errors import BadRequestError
 
 
 def handle_error(matcher: Type[Matcher], silently: bool = False):

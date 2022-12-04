@@ -1,6 +1,6 @@
-from pydantic import BaseModel, validator, Field
+from pydantic import BaseModel, validator
 
-from nonebot_plugin_majsoul.data.models.player_rank import PlayerRank
+from .player_rank import PlayerRank
 
 
 class PlayerLevel(BaseModel):

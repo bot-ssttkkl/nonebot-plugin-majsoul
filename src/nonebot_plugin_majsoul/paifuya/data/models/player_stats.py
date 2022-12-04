@@ -2,8 +2,8 @@ from typing import List
 
 from pydantic import BaseModel
 
-from nonebot_plugin_majsoul.data.models.player_info import PlayerLevel
-from nonebot_plugin_majsoul.data.models.room_rank import RoomRank
+from .player_info import PlayerLevel
+from .room_rank import RoomRank
 
 
 class PlayerStats(BaseModel):

@@ -8,15 +8,15 @@ from nonebot import on_command
 from nonebot.internal.adapter import Event
 from nonebot.internal.matcher import Matcher
 
-from nonebot_plugin_majsoul.data.api import four_player_api, three_player_api
-from nonebot_plugin_majsoul.data.models.player_num import PlayerNum
-from nonebot_plugin_majsoul.data.models.room_rank import all_four_player_room_rank, all_three_player_room_rank, RoomRank
-from nonebot_plugin_majsoul.mappers.player_stats import map_player_stats
-from .interceptors.handle_error import handle_error
-from ..errors import BadRequestError
-from ..parsers.limit_of_games import try_parse_limit_of_games
-from ..parsers.room_rank import try_parse_room_rank
-from ..parsers.time_span import try_parse_time_span
+from nonebot_plugin_majsoul.errors import BadRequestError
+from nonebot_plugin_majsoul.interceptors.handle_error import handle_error
+from .data.api import four_player_api, three_player_api
+from .data.models.player_num import PlayerNum
+from .data.models.room_rank import all_four_player_room_rank, all_three_player_room_rank, RoomRank
+from .mappers.player_stats import map_player_stats
+from .parsers.limit_of_games import try_parse_limit_of_games
+from .parsers.room_rank import try_parse_room_rank
+from .parsers.time_span import try_parse_time_span
 
 query_majsoul_info_matcher = on_command('雀魂信息', aliases={'雀魂查询'})
 

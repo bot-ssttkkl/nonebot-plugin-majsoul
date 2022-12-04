@@ -1,4 +1,4 @@
-from nonebot_plugin_majsoul.data.models.player_num import PlayerNum
+from ..data.models.player_num import PlayerNum
 
 _PLAYER_NUM_MAPPING = {
     PlayerNum.four: "四麻",
