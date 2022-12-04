@@ -35,7 +35,10 @@ def make_handler(player_num: PlayerNum):
             if "room_rank" not in kwargs:
                 room_rank = try_parse_room_rank(arg)
                 if room_rank is not None:
-                    kwargs["room_rank"] = room_rank
+                    if player_num == PlayerNum.four:
+                        kwargs["room_rank"] = room_rank[0]
+                    elif player_num == PlayerNum.three:
+                        kwargs["room_rank"] = room_rank[1]
                     continue
 
             if "time_span" not in kwargs:

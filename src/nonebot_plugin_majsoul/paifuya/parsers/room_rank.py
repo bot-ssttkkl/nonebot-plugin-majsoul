@@ -13,9 +13,6 @@ _ROOM_RANK_REVERSED_MAPPING = {
     "玉": (all_four_player_jade_room_rank, all_three_player_jade_room_rank),
     "王座": (all_four_player_throne_room_rank, all_three_player_throne_room_rank),
 
-    "四人南": all_four_player_south_room_rank,
-    "四人东": all_four_player_east_room_rank,
-
     "金东": ({RoomRank.four_player_golden_east}, {RoomRank.three_player_golden_east}),
     "金南": ({RoomRank.four_player_golden_south}, {RoomRank.three_player_golden_south}),
     "玉东": ({RoomRank.four_player_jade_east}, {RoomRank.three_player_jade_east}),
