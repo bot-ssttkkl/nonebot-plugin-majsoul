@@ -14,6 +14,7 @@ from nonebot_plugin_majsoul.data.models.room_rank import all_four_player_room_ra
 from nonebot_plugin_majsoul.mappers.player_stats import map_player_stats
 from .interceptors.handle_error import handle_error
 from ..errors import BadRequestError
+from ..parsers.limit_of_games import try_parse_limit_of_games
 from ..parsers.room_rank import try_parse_room_rank
 from ..parsers.time_span import try_parse_time_span
 
@@ -44,6 +45,12 @@ async def query_majsoul_info(matcher: Matcher, event: Event):
                 kwargs["start_time"], kwargs["end_time"] = time_span
                 continue
 
+        if "limit" not in kwargs:
+            limit = try_parse_limit_of_games(arg)
+            if limit is not None:
+                kwargs["limit"] = limit
+                continue
+
     await handle_query_majsoul_info(matcher, nickname, **kwargs)
 
 
@@ -57,7 +64,8 @@ async def handle_query_majsoul_info(matcher: Matcher, nickname: str, *,
                                     four_men_room_rank: AbstractSet[RoomRank] = all_four_player_room_rank,
                                     three_men_room_rank: AbstractSet[RoomRank] = all_three_player_room_rank,
                                     start_time: Optional[datetime] = None,
-                                    end_time: Optional[datetime] = None):
+                                    end_time: Optional[datetime] = None,
+                                    limit: Optional[int] = None):
     if start_time is None:
         start_time = datetime.fromisoformat("2010-01-01T00:00:00")
 
@@ -74,48 +82,57 @@ async def handle_query_majsoul_info(matcher: Matcher, nickname: str, *,
 
             sio.write(f"昵称：{players[0].nickname}\n")
 
-            args_by_game_men_num = []
-
-            if len(four_men_room_rank):
-                args_by_game_men_num.append((create_task(
-                    api[PlayerNum.four].player_stats(
+            async def worker(player_num: PlayerNum, room_rank: AbstractSet[RoomRank]):
+                if limit is None:
+                    new_start_time = start_time
+                else:
+                    records = await api[player_num].player_records(
                         players[0].id,
                         start_time,
                         end_time,
-                        four_men_room_rank
-                    )
-                ), four_men_room_rank, PlayerNum.four))
-            else:
-                args_by_game_men_num.append(None)
-
-            if len(three_men_room_rank):
-                args_by_game_men_num.append((create_task(
-                    api[PlayerNum.three].player_stats(
-                        players[0].id,
-                        start_time,
-                        end_time,
-                        three_men_room_rank
-                    )
-                ), three_men_room_rank, PlayerNum.three))
-            else:
-                args_by_game_men_num.append(None)
-
-            for args in args_by_game_men_num:
-                if args is None:
-                    continue
-
-                player_stats, room_rank, game_men_num = args
+                        room_rank,
+                        limit,
+                        descending=True)
+                    new_start_time = datetime.fromtimestamp(records[-1]["startTime"], timezone.utc)
 
                 try:
-                    player_stats = await player_stats
+                    return await api[player_num].player_stats(
+                        players[0].id,
+                        new_start_time,
+                        end_time,
+                        room_rank)
                 except HTTPStatusError as e:
                     if e.response.status_code == 404:
-                        player_stats = None
+                        return None
                     else:
                         raise e
 
+            worker_args = []
+            worker_tasks = []
+
+            if len(four_men_room_rank):
+                worker_args.append((PlayerNum.four, four_men_room_rank))
+                worker_tasks.append(create_task(worker(PlayerNum.four, four_men_room_rank)))
+            else:
+                worker_args.append(None)
+                worker_tasks.append(None)
+
+            if len(three_men_room_rank):
+                worker_args.append((PlayerNum.three, three_men_room_rank))
+                worker_tasks.append(create_task(worker(PlayerNum.four, four_men_room_rank)))
+            else:
+                worker_args.append(None)
+                worker_tasks.append(None)
+
+            for i in range(2):
+                if worker_args[i] is None:
+                    continue
+
+                player_num, room_rank = worker_args[i]
+                player_stats = await worker_tasks[i]
+
                 sio.write('\n')
-                map_player_stats(sio, player_stats, room_rank, game_men_num)
+                map_player_stats(sio, player_stats, room_rank, player_num)
 
             sio.write("\n")
             sio.write("PS：本数据不包含金之间以下对局以及2019.11.29之前的对局")
