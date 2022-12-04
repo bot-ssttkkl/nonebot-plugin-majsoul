@@ -1,3 +1,4 @@
+from asyncio import create_task
 from datetime import datetime, timezone
 from io import StringIO
 from typing import AbstractSet, Optional
@@ -12,7 +13,9 @@ from nonebot_plugin_majsoul.interceptors.handle_error import handle_error
 from .data.api import four_player_api, three_player_api
 from .data.models.player_num import PlayerNum
 from .data.models.room_rank import all_four_player_room_rank, all_three_player_room_rank, RoomRank
+from .mappers.player_extended_stats import map_player_extended_stats
 from .mappers.player_stats import map_player_stats
+from .mappers.room_rank import map_room_rank
 from .parsers.limit_of_games import try_parse_limit_of_games
 from .parsers.room_rank import try_parse_room_rank
 from .parsers.time_span import try_parse_time_span
@@ -105,19 +108,33 @@ async def handle_query_majsoul_info(matcher: Matcher, nickname: str, player_num:
                     descending=True)
                 start_time = datetime.fromtimestamp(records[-1]["startTime"], timezone.utc)
 
+            player_stats = create_task(api[player_num].player_stats(
+                players[0].id,
+                start_time,
+                end_time,
+                room_rank))
+            player_extended_stats = create_task(api[player_num].player_extended_stats(
+                players[0].id,
+                start_time,
+                end_time,
+                room_rank))
+
             try:
-                player_stats = await api[player_num].player_stats(
-                    players[0].id,
-                    start_time,
-                    end_time,
-                    room_rank)
+                player_stats = await player_stats
+                player_extended_stats = await player_extended_stats
             except HTTPStatusError as e:
                 if e.response.status_code == 404:
-                    return None
+                    player_stats = None
                 else:
                     raise e
 
-            map_player_stats(sio, player_stats, room_rank, player_num)
+            room_rank_text = map_room_rank(room_rank)
+            if player_stats is None:
+                sio.write(f"没有查询到{room_rank_text}的对局数据呢~")
+            else:
+                map_player_stats(sio, player_stats, room_rank_text, player_num)
+                sio.write('\n')
+                map_player_extended_stats(sio, player_extended_stats, room_rank_text)
 
             sio.write("\nPS：本数据不包含金之间以下对局以及2019.11.29之前的对局")
 

@@ -1,6 +1,6 @@
 from typing import List
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Extra
 
 from .player_info import PlayerLevel
 from .room_rank import RoomRank
@@ -17,3 +17,6 @@ class PlayerStats(BaseModel):
     rank_avg_score: List[float]
     avg_rank: float
     negative_rate: float
+
+    class Config:
+        extra = Extra.ignore
