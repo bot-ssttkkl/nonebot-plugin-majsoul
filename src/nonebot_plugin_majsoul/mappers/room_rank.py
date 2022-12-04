@@ -1,4 +1,4 @@
-from typing import Set
+from typing import AbstractSet
 
 from nonebot_plugin_majsoul.data.models.room_rank import all_four_player_room_rank, \
     all_three_player_room_rank, \
@@ -8,7 +8,7 @@ from nonebot_plugin_majsoul.data.models.room_rank import all_four_player_room_ra
     all_three_player_throne_room_rank
 
 
-def map_room_rank(room_rank: Set[RoomRank]) -> str:
+def map_room_rank(room_rank: AbstractSet[RoomRank]) -> str:
     ans = []
 
     if room_rank & all_four_player_room_rank == all_four_player_room_rank:

@@ -1,4 +1,4 @@
-from typing import TextIO, Set, Optional
+from typing import TextIO, Optional, AbstractSet
 
 from nonebot_plugin_majsoul.data.models.player_info import PlayerLevel
 from nonebot_plugin_majsoul.data.models.player_num import PlayerNum
@@ -9,11 +9,12 @@ from nonebot_plugin_majsoul.mappers.player_rank import map_player_rank
 from nonebot_plugin_majsoul.mappers.room_rank import map_room_rank
 
 
-def map_player_stats(sio: TextIO, stats: Optional[PlayerStats], room_rank: Set[RoomRank],
+def map_player_stats(sio: TextIO, stats: Optional[PlayerStats], room_rank: AbstractSet[RoomRank],
                      player_num: PlayerNum):
-    sio.write(f"【{map_room_rank(room_rank)} 基础数据】\n")
+    room_rank_text = map_room_rank(room_rank)
+    sio.write(f"【{room_rank_text} 基础数据】\n")
     if stats is None:
-        sio.write(f"没有查询到{map_room_rank(room_rank)}的对局数据呢~")
+        sio.write(f"没有查询到{room_rank_text}的对局数据呢~")
     else:
         level = fix_level(stats.level)
         sio.write(f"记录段位：{map_player_rank(level.id)}    ")

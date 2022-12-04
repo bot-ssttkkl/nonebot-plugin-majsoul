@@ -1,4 +1,4 @@
-from typing import AbstractSet, Tuple
+from typing import AbstractSet, Tuple, Optional
 
 from nonebot_plugin_majsoul.data.models.room_rank import RoomRank, all_four_player_south_room_rank, \
     all_four_player_east_room_rank, all_three_player_east_room_rank, all_three_player_south_room_rank, \
@@ -37,5 +37,5 @@ _ROOM_RANK_REVERSED_MAPPING["玉之间南场"] = _ROOM_RANK_REVERSED_MAPPING["�
 _ROOM_RANK_REVERSED_MAPPING["王座之间南场"] = _ROOM_RANK_REVERSED_MAPPING["王座南"]
 
 
-def parse_room_rank(raw: str) -> Tuple[AbstractSet[RoomRank], AbstractSet[RoomRank]]:
+def try_parse_room_rank(raw: str) -> Optional[Tuple[AbstractSet[RoomRank], AbstractSet[RoomRank]]]:
     return _ROOM_RANK_REVERSED_MAPPING.get(raw, None)

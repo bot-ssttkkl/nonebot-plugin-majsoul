@@ -1,7 +1,7 @@
 from asyncio import create_task
 from datetime import datetime, timezone
 from io import StringIO
-from typing import overload, AbstractSet
+from typing import AbstractSet, Optional
 
 from httpx import HTTPStatusError
 from nonebot import on_command
@@ -14,7 +14,8 @@ from nonebot_plugin_majsoul.data.models.room_rank import all_four_player_room_ra
 from nonebot_plugin_majsoul.mappers.player_stats import map_player_stats
 from .interceptors.handle_error import handle_error
 from ..errors import BadRequestError
-from ..parsers.room_rank import parse_room_rank
+from ..parsers.room_rank import try_parse_room_rank
+from ..parsers.time_span import try_parse_time_span
 
 query_majsoul_info_matcher = on_command('雀魂信息', aliases={'雀魂查询'})
 
@@ -23,23 +24,27 @@ query_majsoul_info_matcher = on_command('雀魂信息', aliases={'雀魂查询'}
 @handle_error(query_majsoul_info_matcher)
 async def query_majsoul_info(matcher: Matcher, event: Event):
     args = event.get_message().extract_plain_text().split()[1:]
-    if len(args) == 1:
-        nickname = args[0]
-        if len(nickname) > 15:
-            raise BadRequestError("昵称长度超过雀魂最大限制")
 
-        await handle_query_majsoul_info(matcher, nickname)
-    elif len(args) == 2:
-        nickname = args[0]
-        if len(nickname) > 15:
-            raise BadRequestError("昵称长度超过雀魂最大限制")
+    nickname = args[0]
+    if len(nickname) > 15:
+        raise BadRequestError("昵称长度超过雀魂最大限制")
 
-        room_rank = parse_room_rank(args[1])
-        await handle_query_majsoul_info(matcher, nickname,
-                                        four_men_room_rank=room_rank[0],
-                                        three_men_room_rank=room_rank[1])
-    else:
-        raise BadRequestError("查询参数不正确")
+    kwargs = {}
+
+    for arg in args:
+        if "room_rank" not in kwargs:
+            room_rank = try_parse_room_rank(arg)
+            if room_rank is not None:
+                kwargs["room_rank"] = room_rank
+                continue
+
+        if "time_span" not in kwargs:
+            time_span = try_parse_time_span(arg)
+            if time_span is not None:
+                kwargs["start_time"], kwargs["end_time"] = time_span
+                continue
+
+    await handle_query_majsoul_info(matcher, nickname, **kwargs)
 
 
 api = {
@@ -48,20 +53,16 @@ api = {
 }
 
 
-@overload
-async def handle_query_majsoul_info(matcher: Matcher, nickname: str,
-                                    *, four_men_room_rank: AbstractSet[RoomRank] = ...,
-                                    three_men_room_rank: AbstractSet[RoomRank] = ...,
-                                    start_time: datetime = ...,
-                                    end_time: datetime = ...):
-    ...
+async def handle_query_majsoul_info(matcher: Matcher, nickname: str, *,
+                                    four_men_room_rank: AbstractSet[RoomRank] = all_four_player_room_rank,
+                                    three_men_room_rank: AbstractSet[RoomRank] = all_three_player_room_rank,
+                                    start_time: Optional[datetime] = None,
+                                    end_time: Optional[datetime] = None):
+    if start_time is None:
+        start_time = datetime.fromisoformat("2010-01-01T00:00:00")
 
-
-async def handle_query_majsoul_info(matcher: Matcher, nickname: str, **kwargs):
-    kwargs.setdefault("four_men_room_rank", all_four_player_room_rank)
-    kwargs.setdefault("three_men_room_rank", all_three_player_room_rank)
-    kwargs.setdefault("start_time", datetime.fromisoformat("2010-01-01T00:00:00"))
-    kwargs.setdefault("end_time", datetime.now(timezone.utc))
+    if end_time is None:
+        end_time = datetime.now(timezone.utc)
 
     with StringIO() as sio:
         players = await api[PlayerNum.four].search_player(nickname)
@@ -75,27 +76,27 @@ async def handle_query_majsoul_info(matcher: Matcher, nickname: str, **kwargs):
 
             args_by_game_men_num = []
 
-            if len(kwargs["four_men_room_rank"]):
+            if len(four_men_room_rank):
                 args_by_game_men_num.append((create_task(
                     api[PlayerNum.four].player_stats(
                         players[0].id,
-                        kwargs["start_time"],
-                        kwargs["end_time"],
-                        kwargs["four_men_room_rank"]
+                        start_time,
+                        end_time,
+                        four_men_room_rank
                     )
-                ), kwargs["four_men_room_rank"], PlayerNum.four))
+                ), four_men_room_rank, PlayerNum.four))
             else:
                 args_by_game_men_num.append(None)
 
-            if len(kwargs["three_men_room_rank"]):
+            if len(three_men_room_rank):
                 args_by_game_men_num.append((create_task(
                     api[PlayerNum.three].player_stats(
                         players[0].id,
-                        kwargs["start_time"],
-                        kwargs["end_time"],
-                        kwargs["three_men_room_rank"]
+                        start_time,
+                        end_time,
+                        three_men_room_rank
                     )
-                ), kwargs["three_men_room_rank"], PlayerNum.three))
+                ), three_men_room_rank, PlayerNum.three))
             else:
                 args_by_game_men_num.append(None)
 
