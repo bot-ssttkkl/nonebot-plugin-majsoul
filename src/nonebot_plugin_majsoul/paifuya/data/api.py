@@ -4,6 +4,7 @@ from typing import List, AbstractSet
 from httpx import AsyncClient, URL
 from nonebot import get_driver, logger
 
+from nonebot_plugin_majsoul.network.auto_retry import auto_retry
 from .models.player_extended_stats import PlayerExtendedStats
 from .models.player_info import PlayerInfo
 from .models.player_stats import PlayerStats
@@ -25,6 +26,8 @@ class AmaeKoromoApi:
             response.raise_for_status()
 
         self.client: AsyncClient = AsyncClient(
+            timeout=10.0,
+            follow_redirects=True,
             event_hooks={'request': [req_hook], 'response': [resp_hook]}
         )
 
@@ -33,6 +36,7 @@ class AmaeKoromoApi:
     async def aclose(self):
         await self.client.aclose()
 
+    @auto_retry
     async def search_player(self, nickname: str, *, limit: int = 10) -> List[PlayerInfo]:
         resp = await self.client.get(
             URL(f"{self.baseurl}/search_player/{nickname}"),
@@ -40,6 +44,7 @@ class AmaeKoromoApi:
         )
         return [PlayerInfo.parse_obj(x) for x in resp.json()]
 
+    @auto_retry
     async def player_stats(self, player_id: int, start_time: datetime, end_time: datetime,
                            room_rank: AbstractSet[RoomRank]) -> PlayerStats:
         start_timestamp = int(start_time.timestamp() * 1000)
@@ -51,6 +56,7 @@ class AmaeKoromoApi:
         )
         return PlayerStats.parse_obj(resp.json())
 
+    @auto_retry
     async def player_extended_stats(self, player_id: int, start_time: datetime, end_time: datetime,
                                     room_rank: AbstractSet[RoomRank]) -> PlayerExtendedStats:
         start_timestamp = int(start_time.timestamp() * 1000)
@@ -62,6 +68,7 @@ class AmaeKoromoApi:
         )
         return PlayerExtendedStats.parse_obj(resp.json())
 
+    @auto_retry
     async def player_records(self, player_id: int, start_time: datetime, end_time: datetime,
                              room_rank: AbstractSet[RoomRank], limit: int, descending: bool = True) -> List[dict]:
         start_timestamp = int(start_time.timestamp() * 1000)
