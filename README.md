@@ -26,6 +26,8 @@ _✨ 雀魂信息查询插件 ✨_
 
 受[DaiShengSheng/Majsoul_bot](https://github.com/DaiShengSheng/Majsoul_bot)启发而写的雀魂信息查询 Bot 插件。
 
+支持适配器：Onebot V11
+
 ## 功能
 
 ### 雀魂牌谱屋
