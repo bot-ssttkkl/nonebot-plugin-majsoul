@@ -1,5 +1,5 @@
-from datetime import datetime
-from typing import List, AbstractSet
+from datetime import datetime, timedelta
+from typing import List, AbstractSet, AsyncGenerator
 
 from httpx import AsyncClient, URL, HTTPError
 from nonebot import get_driver, logger
@@ -46,7 +46,10 @@ class PaifuyaApi:
 
     @auto_retry
     @prober.select_on_exception(HTTPError)
-    async def search_player(self, nickname: str, *, limit: int = 10) -> List[PlayerInfo]:
+    async def search_player(
+            self, nickname: str,
+            *, limit: int = 10
+    ) -> List[PlayerInfo]:
         resp = await self.client.get(
             URL(f"https://{prober.host}/{self._baseurl}/search_player/{nickname}"),
             params={"limit": limit}
@@ -55,8 +58,9 @@ class PaifuyaApi:
 
     @auto_retry
     @prober.select_on_exception(HTTPError)
-    async def player_stats(self, player_id: int, start_time: datetime, end_time: datetime,
-                           room_rank: AbstractSet[RoomRank]) -> PlayerStats:
+    async def player_stats(
+            self, player_id: int, start_time: datetime, end_time: datetime, room_rank: AbstractSet[RoomRank]
+    ) -> PlayerStats:
         start_timestamp = int(start_time.timestamp() * 1000)
         end_timestamp = int(end_time.timestamp() * 1000)
         mode = ".".join(map(lambda x: str(x.value), room_rank))
@@ -68,8 +72,9 @@ class PaifuyaApi:
 
     @auto_retry
     @prober.select_on_exception(HTTPError)
-    async def player_extended_stats(self, player_id: int, start_time: datetime, end_time: datetime,
-                                    room_rank: AbstractSet[RoomRank]) -> PlayerExtendedStats:
+    async def player_extended_stats(
+            self, player_id: int, start_time: datetime, end_time: datetime, room_rank: AbstractSet[RoomRank]
+    ) -> PlayerExtendedStats:
         start_timestamp = int(start_time.timestamp() * 1000)
         end_timestamp = int(end_time.timestamp() * 1000)
         mode = ".".join(map(lambda x: str(x.value), room_rank))
@@ -81,8 +86,10 @@ class PaifuyaApi:
 
     @auto_retry
     @prober.select_on_exception(HTTPError)
-    async def player_records(self, player_id: int, start_time: datetime, end_time: datetime,
-                             room_rank: AbstractSet[RoomRank], limit: int, descending: bool = True) -> List[GameRecord]:
+    async def player_records(
+            self, player_id: int, start_time: datetime, end_time: datetime, room_rank: AbstractSet[RoomRank],
+            *, limit: int, descending: bool = True
+    ) -> List[GameRecord]:
         start_timestamp = int(start_time.timestamp() * 1000)
         end_timestamp = int(end_time.timestamp() * 1000)
         mode = ".".join(map(lambda x: str(x.value), room_rank))
@@ -91,6 +98,22 @@ class PaifuyaApi:
             params={"mode": mode, "limit": str(limit), "descending": str(descending).lower()}
         )
         return [GameRecord.parse_obj(x) for x in resp.json()]
+
+    async def player_records_stream(
+            self, player_id: int, start_time: datetime, end_time: datetime, room_rank: AbstractSet[RoomRank],
+            *, batch: int = 200, descending: bool = True
+    ) -> AsyncGenerator[GameRecord, None]:
+        while start_time <= end_time:
+            records = await self.player_records(
+                player_id, start_time, end_time, room_rank, limit=batch, descending=descending
+            )
+            for r in records:
+                yield r
+
+            if len(records) < batch:
+                break
+
+            end_time = records[-1].start_time - timedelta(seconds=1)
 
 
 four_player_api = PaifuyaApi(f"api/v2/pl4")

@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Optional
 
 from pydantic import BaseModel, Extra
 
@@ -14,7 +14,7 @@ class PlayerStats(BaseModel):
     level: PlayerLevel
     max_level: PlayerLevel
     rank_rates: List[float]
-    rank_avg_score: List[float]
+    rank_avg_score: List[Optional[float]]
     avg_rank: float
     negative_rate: float
 

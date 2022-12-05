@@ -1,7 +1,7 @@
 import asyncio
 from asyncio import wait_for
 from concurrent.futures import ThreadPoolExecutor
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timezone
 from functools import partial
 from io import BytesIO
 from multiprocessing import cpu_count
@@ -18,8 +18,8 @@ from nonebot.internal.matcher import Matcher
 
 from nonebot_plugin_majsoul.errors import BadRequestError
 from .data.api import paifuya_api as api
-from .data.models.game_record import GameRecord, GamePlayer
-from .data.models.player_info import PlayerInfo
+from .data.models.game_record import GameRecord
+from .data.models.player_info import PlayerInfo, PlayerLevel
 from .data.models.player_num import PlayerNum
 from .data.models.player_rank import PlayerMajorRank
 from .data.models.room_rank import all_four_player_room_rank, all_three_player_room_rank, RoomRank
@@ -94,13 +94,14 @@ _color = {RoomRank.four_player_throne_south: 'r',
 def draw(bio: BytesIO,
          player_num: PlayerNum,
          player: PlayerInfo,
+         initial_level: PlayerLevel,
          records: Sequence[GameRecord]):
     fig: Figure = plt.figure(facecolor='w', figsize=(16, 10))
     ax: Axes = fig.add_subplot(1, 1, 1)
 
-    pre_rank = None
-    pre_pt, pt, base = 0, 0, 0
-    max_rank = None
+    pre_rank = max_rank = initial_level.id
+    pre_pt = pt = initial_level.score + initial_level.delta
+    base = pre_rank.max_pt // 2
 
     for i, r in enumerate(records):
         for p in r.players:
@@ -154,9 +155,6 @@ async def handle_query_majsoul_pt_plot(matcher: Matcher, nickname: str, player_n
     else:
         raise ValueError(f"invalid player_num: {player_num}")
 
-    if start_time is None:
-        start_time = datetime.fromisoformat("2010-01-01T00:00:00").astimezone(timezone.utc)
-
     if end_time is None:
         end_time = datetime.now(timezone.utc)
 
@@ -170,48 +168,57 @@ async def handle_query_majsoul_pt_plot(matcher: Matcher, nickname: str, player_n
     msg = ""
     if len(players) > 1:
         msg += "查询到多条角色昵称呢~，若输出不是您想查找的昵称，请补全查询昵称。\n"
-    msg += f"昵称：{player.nickname}"
+    msg += f"昵称：{player.nickname}\n"
+    msg += "PS：本数据不包含金之间以下对局以及2019.11.29之前的对局"
 
     try:
         records = []
 
-        while True:
-            if limit is not None and len(records) >= limit:
-                break
-            if start_time > end_time:
-                break
-
-            pending_records = await api[player_num].player_records(
-                player.id, start_time, end_time, room_rank, limit=200, descending=True
-            )
-            records.extend(pending_records)
-
-            if len(pending_records) < 200:
+        api_start_time = datetime.fromisoformat("2010-01-01T00:00:00").astimezone(timezone.utc)
+        async for r in api[player_num].player_records_stream(
+                player.id, api_start_time, end_time, room_rank, descending=True):
+            # 比limit多取一个，用于获取在此之前的段位及PT
+            if limit is not None and len(records) > limit:
                 break
 
-            end_time = pending_records[-1].start_time - timedelta(seconds=1)
+            records.append(r)
 
-        if limit is not None and len(records) > limit:
+            # 同样多取一个，用于获取在此之前的段位及PT
+            if start_time is not None and r.start_time < start_time:
+                limit = len(records) - 1
+                break
+
+        predecessor_record = None
+        if limit:
+            if len(records) > limit:
+                predecessor_record = records[limit]
             records = records[:limit]
+
         records.reverse()
+
+        if predecessor_record is not None:
+            player_stats_at_start = await api[player_num].player_stats(
+                player.id, predecessor_record.start_time, predecessor_record.end_time, room_rank)
+            initial_level = player_stats_at_start.level
+        else:
+            initial_level = None
+            for p in records[0].players:
+                if p.id == player.id:
+                    initial_level = PlayerLevel(id=p.rank, score=p.rank.max_pt // 2, delta=0)
+                    break
     except HTTPStatusError as e:
         if e.response.status_code == 404:
-            records = []
+            await matcher.send("没有查询到该角色在金之间以上的对局数据呢~")
+            return
         else:
             raise e
-
-    if not records:
-        await matcher.send("没有查询到该角色在金之间以上的对局数据呢~")
-        return
-
-    msg += "\nPS：本数据不包含金之间以下对局以及2019.11.29之前的对局"
 
     if not records:
         await matcher.send(msg)
     else:
         with BytesIO() as bio:
             loop = asyncio.get_running_loop()
-            await loop.run_in_executor(_executor, partial(draw, bio, player_num, player, records))
+            await loop.run_in_executor(_executor, partial(draw, bio, player_num, player, initial_level, records))
 
             await matcher.send(Message([
                 MessageSegment.text(msg),
