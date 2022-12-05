@@ -85,7 +85,7 @@ async def handle_query_majsoul_info(matcher: Matcher, nickname: str, player_num:
             room_rank = all_three_player_room_rank
 
     if start_time is None:
-        start_time = datetime.fromisoformat("2010-01-01T00:00:00")
+        start_time = datetime.fromisoformat("2010-01-01T00:00:00").astimezone(timezone.utc)
 
     if end_time is None:
         end_time = datetime.now(timezone.utc)

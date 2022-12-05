@@ -5,7 +5,7 @@ from datetime import datetime, timezone, timedelta
 from functools import partial
 from io import BytesIO
 from multiprocessing import cpu_count
-from typing import Sequence
+from typing import Sequence, Optional
 
 import matplotlib.pyplot as plt
 from httpx import HTTPStatusError
@@ -18,13 +18,15 @@ from nonebot.internal.matcher import Matcher
 
 from nonebot_plugin_majsoul.errors import BadRequestError
 from .data.api import paifuya_api as api
-from .data.models.game_record import GameRecord
+from .data.models.game_record import GameRecord, GamePlayer
 from .data.models.player_info import PlayerInfo
 from .data.models.player_num import PlayerNum
-from .data.models.player_rank import PlayerRank, PlayerMajorRank
+from .data.models.player_rank import PlayerMajorRank
 from .data.models.room_rank import all_four_player_room_rank, all_three_player_room_rank, RoomRank
 from .mappers.player_num import map_player_num
 from .mappers.player_rank import map_player_rank
+from .parsers.limit_of_games import try_parse_limit_of_games
+from .parsers.time_span import try_parse_time_span
 from ..interceptors.handle_error import handle_error
 
 _executor = ThreadPoolExecutor(cpu_count())
@@ -38,7 +40,22 @@ def make_handler(player_num: PlayerNum):
         if len(nickname) > 15:
             raise BadRequestError("昵称长度超过雀魂最大限制")
 
-        await wait_for(handle_query_majsoul_pt_plot(matcher, nickname, player_num), timeout=15)
+        kwargs = {}
+
+        for arg in args:
+            if "time_span" not in kwargs:
+                time_span = try_parse_time_span(arg)
+                if time_span is not None:
+                    kwargs["start_time"], kwargs["end_time"] = time_span
+                    continue
+
+            if "limit" not in kwargs:
+                limit = try_parse_limit_of_games(arg)
+                if limit is not None:
+                    kwargs["limit"] = limit
+                    continue
+
+        await wait_for(handle_query_majsoul_pt_plot(matcher, nickname, player_num, **kwargs), timeout=15)
 
     return query_majsoul_pt_plot
 
@@ -72,15 +89,13 @@ _color = {RoomRank.four_player_throne_south: 'r',
 def draw(bio: BytesIO,
          player_num: PlayerNum,
          player: PlayerInfo,
-         records: Sequence[GameRecord],
-         initial_rank: PlayerRank):
+         records: Sequence[GameRecord]):
     fig: Figure = plt.figure(facecolor='w', figsize=(16, 10))
     ax: Axes = fig.add_subplot(1, 1, 1)
 
-    ax.text(3, 100, '\n'.join(map_player_rank(initial_rank)), fontsize=15)
-
-    pre_rank, pre_pt, pt, base = initial_rank, 600, 600, 600
-    max_rank = initial_rank
+    pre_rank = None
+    pre_pt, pt, base = 0, 0, 0
+    max_rank = None
 
     for i, r in enumerate(records):
         for p in r.players:
@@ -88,11 +103,12 @@ def draw(bio: BytesIO,
                 continue
 
             rank = p.rank
-            max_rank = max(max_rank, rank)
+            if max_rank is None or rank > max_rank:
+                max_rank = rank
 
             if pre_rank != rank:
                 ax.text(i + 3, 100, '\n'.join(map_player_rank(rank)), fontsize=15)
-                ax.vlines(i, 0, max(rank.max_pt, pre_rank.max_pt), color='k')
+                ax.vlines(i, 0, max(rank.max_pt, pre_rank.max_pt if pre_rank else 0), color='k')
 
                 base = rank.max_pt // 2
                 pt = pre_pt = base
@@ -106,7 +122,10 @@ def draw(bio: BytesIO,
 
             pre_rank, pre_pt = rank, pt
 
-    ax.set_title(f'雀魂段位战PT推移图[{map_player_num(player_num)}]（{player.nickname}）', fontsize=12, pad=5)
+    ax.set_title(f'雀魂段位战PT推移图[{map_player_num(player_num)}]  '
+                 f'@{player.nickname}'
+                 f'（{records[0].start_time.strftime("%Y/%m/%d")}~{records[-1].start_time.strftime("%Y/%m/%d")}）',
+                 fontsize=12, pad=5)
     ax.set_xlabel('对局数', fontsize=20)
     ax.set_ylabel('PT', fontsize=20)
 
@@ -119,15 +138,22 @@ def draw(bio: BytesIO,
     fig.savefig(bio, format='png')
 
 
-async def handle_query_majsoul_pt_plot(matcher: Matcher, nickname: str, player_num: PlayerNum):
+async def handle_query_majsoul_pt_plot(matcher: Matcher, nickname: str, player_num: PlayerNum, *,
+                                       start_time: Optional[datetime] = None,
+                                       end_time: Optional[datetime] = None,
+                                       limit: Optional[int] = None):
     if player_num == PlayerNum.four:
         room_rank = all_four_player_room_rank
-        initial_rank = PlayerRank.from_code(10301)
     elif player_num == PlayerNum.three:
         room_rank = all_three_player_room_rank
-        initial_rank = PlayerRank.from_code(20301)
     else:
         raise ValueError(f"invalid player_num: {player_num}")
+
+    if start_time is None:
+        start_time = datetime.fromisoformat("2010-01-01T00:00:00").astimezone(timezone.utc)
+
+    if end_time is None:
+        end_time = datetime.now(timezone.utc)
 
     players = await api[player_num].search_player(nickname)
     if len(players) == 0:
@@ -142,11 +168,14 @@ async def handle_query_majsoul_pt_plot(matcher: Matcher, nickname: str, player_n
     msg += f"昵称：{player.nickname}"
 
     try:
-        start_time = datetime.fromisoformat("2010-01-01T00:00:00")
-        end_time = datetime.fromtimestamp(player.latest_timestamp, timezone.utc)
         records = []
 
         while True:
+            if limit is not None and len(records) >= limit:
+                break
+            if start_time > end_time:
+                break
+
             pending_records = await api[player_num].player_records(
                 player.id, start_time, end_time, room_rank, limit=200, descending=True
             )
@@ -157,6 +186,8 @@ async def handle_query_majsoul_pt_plot(matcher: Matcher, nickname: str, player_n
 
             end_time = pending_records[-1].start_time - timedelta(seconds=1)
 
+        if limit is not None and len(records) > limit:
+            records = records[:limit]
         records.reverse()
     except HTTPStatusError as e:
         if e.response.status_code == 404:
@@ -175,7 +206,7 @@ async def handle_query_majsoul_pt_plot(matcher: Matcher, nickname: str, player_n
     else:
         with BytesIO() as bio:
             loop = asyncio.get_running_loop()
-            await loop.run_in_executor(_executor, partial(draw, bio, player_num, player, records, initial_rank))
+            await loop.run_in_executor(_executor, partial(draw, bio, player_num, player, records))
 
             await matcher.send(Message([
                 MessageSegment.text(msg),
