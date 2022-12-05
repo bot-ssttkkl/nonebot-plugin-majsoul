@@ -79,19 +79,22 @@ async def handle_query_majsoul_info(matcher: Matcher, nickname: str, player_num:
                                     start_time: Optional[datetime] = None,
                                     end_time: Optional[datetime] = None,
                                     limit: Optional[int] = None):
+    default_start_time = start_time is None
+    default_end_time = end_time is None
+    default_limit = limit is None
+
     if room_rank is None:
         if player_num == PlayerNum.four:
             room_rank = all_four_player_room_rank
         elif player_num == PlayerNum.three:
             room_rank = all_three_player_room_rank
 
-    default_start_time = start_time is None
     if start_time is None:
         start_time = datetime.fromisoformat("2010-01-01T00:00:00")
 
-    default_end_time = end_time is None
     if end_time is None:
         end_time = datetime.now(timezone.utc)
+
 
     with StringIO() as sio:
         players = await api[player_num].search_player(nickname)
@@ -152,6 +155,8 @@ async def handle_query_majsoul_info(matcher: Matcher, nickname: str, player_num:
                 if not default_end_time:
                     url.write("/")
                     url.write(end_time.strftime("%Y-%m-%d"))
+                if not default_limit:
+                    url.write(f"?limit={limit}")
 
                 sio.write("\n")
                 sio.write(url.getvalue())
