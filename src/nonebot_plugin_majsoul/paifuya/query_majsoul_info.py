@@ -111,9 +111,9 @@ async def handle_query_majsoul_info(matcher: Matcher, nickname: str, player_num:
                     start_time,
                     end_time,
                     room_rank,
-                    limit,
+                    limit=limit,
                     descending=True)
-                start_time = datetime.fromtimestamp(records[-1]["startTime"], timezone.utc)
+                start_time = records[-1].start_time
 
             player_stats = create_task(api[player_num].player_stats(
                 players[0].id,
