@@ -16,7 +16,9 @@ from nonebot.adapters.onebot.v11 import MessageEvent, MessageSegment
 from nonebot.internal.adapter import Message
 from nonebot.internal.matcher import Matcher
 
+from nonebot_plugin_majsoul.config import conf
 from nonebot_plugin_majsoul.errors import BadRequestError
+from nonebot_plugin_majsoul.interceptors.handle_error import handle_error
 from .data.api import paifuya_api as api
 from .data.models.game_record import GameRecord
 from .data.models.player_info import PlayerInfo, PlayerLevel
@@ -27,15 +29,17 @@ from .mappers.player_num import map_player_num
 from .mappers.player_rank import map_player_rank
 from .parsers.limit_of_games import try_parse_limit_of_games
 from .parsers.time_span import try_parse_time_span
-from ..config import conf
-from ..interceptors.handle_error import handle_error
 
 _executor = ThreadPoolExecutor(cpu_count())
 
 
 def make_handler(player_num: PlayerNum):
     async def query_majsoul_pt_plot(matcher: Matcher, event: MessageEvent):
-        args = event.get_message().extract_plain_text().split()[1:]
+        args = event.get_message().extract_plain_text().split()
+        cmd, args = args[0], args[1:]
+
+        if len(args) == 0:
+            raise BadRequestError(f"指令格式：{cmd} <雀魂账号> [最近<数量>场] [最近<数量>{{天|周|个月|年}}]")
 
         nickname = args[0]
         if len(nickname) > 15:
@@ -43,7 +47,7 @@ def make_handler(player_num: PlayerNum):
 
         kwargs = {}
 
-        for arg in args:
+        for arg in args[1:]:
             if "time_span" not in kwargs:
                 time_span = try_parse_time_span(arg)
                 if time_span is not None:

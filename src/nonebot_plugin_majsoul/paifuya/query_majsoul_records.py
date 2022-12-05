@@ -8,21 +8,25 @@ from nonebot import on_command
 from nonebot.adapters.onebot.v11 import Message, MessageSegment, MessageEvent
 from nonebot.internal.matcher import current_matcher, current_event, current_bot
 
+from nonebot_plugin_majsoul.config import conf
 from nonebot_plugin_majsoul.errors import BadRequestError
+from nonebot_plugin_majsoul.interceptors.handle_error import handle_error
+from nonebot_plugin_majsoul.utils.send_message import send_forward_msg
 from .data.api import paifuya_api as api
 from .data.models.player_num import PlayerNum
 from .data.models.room_rank import RoomRank, all_four_player_room_rank, all_three_player_room_rank
 from .mappers.game_record import map_game_record
 from .mappers.room_rank import map_room_rank
 from .parsers.room_rank import try_parse_room_rank
-from ..config import conf
-from ..interceptors.handle_error import handle_error
-from ..utils.send_message import send_forward_msg
 
 
 def make_handler(player_num: PlayerNum):
     async def query_majsoul_records(event: MessageEvent):
-        args = event.get_message().extract_plain_text().split()[1:]
+        args = event.get_message().extract_plain_text().split()
+        cmd, args = args[0], args[1:]
+
+        if len(args) == 0:
+            raise BadRequestError(f"指令格式：{cmd} <雀魂账号> [<房间类型>]")
 
         nickname = args[0]
         if len(nickname) > 15:
@@ -30,7 +34,7 @@ def make_handler(player_num: PlayerNum):
 
         kwargs = {}
 
-        for arg in args:
+        for arg in args[1:]:
             if "room_rank" not in kwargs:
                 room_rank = try_parse_room_rank(arg)
                 if room_rank is not None:
@@ -85,7 +89,7 @@ async def handle_query_majsoul_records(nickname: str, player_num: PlayerNum, *,
                 start_time,
                 end_time,
                 room_rank,
-                5,
+                10,
                 descending=True)
         except HTTPStatusError as e:
             if e.response.status_code == 404:

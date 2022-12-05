@@ -8,6 +8,7 @@ from nonebot import on_command
 from nonebot.internal.adapter import Event
 from nonebot.internal.matcher import Matcher
 
+from nonebot_plugin_majsoul.config import conf
 from nonebot_plugin_majsoul.errors import BadRequestError
 from nonebot_plugin_majsoul.interceptors.handle_error import handle_error
 from .data.api import paifuya_api as api
@@ -19,12 +20,15 @@ from .mappers.room_rank import map_room_rank
 from .parsers.limit_of_games import try_parse_limit_of_games
 from .parsers.room_rank import try_parse_room_rank
 from .parsers.time_span import try_parse_time_span
-from ..config import conf
 
 
 def make_handler(player_num: PlayerNum):
     async def query_majsoul_info(matcher: Matcher, event: Event):
-        args = event.get_message().extract_plain_text().split()[1:]
+        args = event.get_message().extract_plain_text().split()
+        cmd, args = args[0], args[1:]
+
+        if len(args) == 0:
+            raise BadRequestError(f"指令格式：{cmd} <雀魂账号> [<房间类型>] [最近<数量>场] [最近<数量>{{天|周|个月|年}}]")
 
         nickname = args[0]
         if len(nickname) > 15:
@@ -32,7 +36,7 @@ def make_handler(player_num: PlayerNum):
 
         kwargs = {}
 
-        for arg in args:
+        for arg in args[1:]:
             if "room_rank" not in kwargs:
                 room_rank = try_parse_room_rank(arg)
                 if room_rank is not None:

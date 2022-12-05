@@ -10,3 +10,4 @@ with resources.path(res, "LXGWWenKaiMonoLite-Regular.ttf") as path:
 plt.rcParams['font.sans-serif'] = 'LXGW WenKai Mono Lite'
 
 from . import paifuya
+
