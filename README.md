@@ -30,14 +30,35 @@ _✨ 雀魂信息查询插件 ✨_
 
 ### 雀魂牌谱屋
 
-- [x] 查询个人数据（可按照时间、按照场数、按照房间类型查询）
-- [x] 查询个人最近对局（可按照房间类型查询）
-- [x] 绘制个人PT推移图
+#### 查询个人数据（可按照时间、按照场数、按照房间类型查询）
+
+指令：`/雀魂(三麻)信息 <雀魂账号> [<房间类型>] [最近<数量>场] [最近<数量>{天|周|个月|年}]`
+
+![雀魂信息](img/majsoul_info.png)
+
+![雀魂信息2](img/majsoul_info_2.png)
+
+#### 查询个人最近对局（可按照房间类型查询）
+
+指令：`/雀魂(三麻)对局 <雀魂账号> [<房间类型>]`
+
+![最近对局](img/records.png)
+
+![最近对局（消息）](img/records_forward.png)
+
+#### 绘制个人PT推移图
+
+指令：`/雀魂(三麻)PT图 <雀魂账号> [最近<数量>场] [最近<数量>{天|周|个月|年}]`
+
+![雀魂PT推移图](img/pt_plot.png)
+
+![雀魂PT推移图（图）](img/pt_plot_img.png)
 
 ## See Also
 
 - [nonebot-plugin-mahjong-utils](https://github.com/ssttkkl/nonebot-plugin-mahjong-utils)：日麻小工具插件。支持手牌分析、番符点数查询。
-- [nonebot-plugin-mahjong-scoreboard](https://github.com/ssttkkl/nonebot-plugin-mahjong-scoreboard)：日麻计分器。为面麻群友提供日麻对局分数记录。根据马点进行PT精算，统计PT增减，支持对局与榜单查询与导出。
+- [nonebot-plugin-mahjong-scoreboard](https://github.com/ssttkkl/nonebot-plugin-mahjong-scoreboard)
+  ：日麻计分器。为面麻群友提供日麻对局分数记录。根据马点进行PT精算，统计PT增减，支持对局与榜单查询与导出。
 
 ## LICENSE
 

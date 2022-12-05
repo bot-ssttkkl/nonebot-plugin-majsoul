@@ -89,7 +89,7 @@ async def handle_query_majsoul_records(nickname: str, player_num: PlayerNum, *,
                 start_time,
                 end_time,
                 room_rank,
-                10,
+                limit=10,
                 descending=True)
         except HTTPStatusError as e:
             if e.response.status_code == 404:
