@@ -1,3 +1,4 @@
+import asyncio
 from functools import wraps
 from typing import Type
 
@@ -26,7 +27,11 @@ def handle_error(matcher: Type[Matcher], silently: bool = False):
             except HTTPError as e:
                 logger.exception(e)
                 if not silently:
-                    await matcher.finish(f"网络错误：{type(e)}{str(e)}")
+                    await matcher.finish(f"网络错误")
+            except asyncio.TimeoutError as e:
+                logger.warning(type(e))
+                if not silently:
+                    await matcher.finish(f"查询超时")
             except Exception as e:
                 logger.exception(e)
                 if not silently:

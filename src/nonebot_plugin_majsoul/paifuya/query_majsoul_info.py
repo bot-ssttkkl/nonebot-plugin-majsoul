@@ -1,4 +1,4 @@
-from asyncio import create_task
+from asyncio import create_task, wait_for
 from datetime import datetime, timezone
 from io import StringIO
 from typing import AbstractSet, Optional
@@ -53,7 +53,7 @@ def make_handler(player_num: PlayerNum):
                     kwargs["limit"] = limit
                     continue
 
-        await handle_query_majsoul_info(matcher, nickname, player_num, **kwargs)
+        await wait_for(handle_query_majsoul_info(matcher, nickname, player_num, **kwargs), timeout=15)
 
     return query_majsoul_info
 
@@ -85,9 +85,11 @@ async def handle_query_majsoul_info(matcher: Matcher, nickname: str, player_num:
         elif player_num == PlayerNum.three:
             room_rank = all_three_player_room_rank
 
+    default_start_time = start_time is None
     if start_time is None:
         start_time = datetime.fromisoformat("2010-01-01T00:00:00")
 
+    default_end_time = end_time is None
     if end_time is None:
         end_time = datetime.now(timezone.utc)
 
@@ -140,5 +142,16 @@ async def handle_query_majsoul_info(matcher: Matcher, nickname: str, player_num:
                 map_player_extended_stats(sio, player_extended_stats, room_rank_text)
 
             sio.write("\nPS：本数据不包含金之间以下对局以及2019.11.29之前的对局")
+
+            with StringIO() as url:
+                url.write(f"https://amae-koromo.sapk.ch/player/{players[0].id}/")
+                url.write(".".join(map(lambda x: str(x.value), room_rank)))
+                url.write("/")
+                url.write(start_time.strftime("yyyy-MM-dd"))
+                url.write("/")
+                url.write(end_time.strftime("yyyy-MM-dd"))
+
+                sio.write("\n")
+                sio.write(url.getvalue())
 
         await matcher.send(sio.getvalue())

@@ -15,6 +15,7 @@ nonebot2 = "^2.0.0rc1"
 httpx = "^0.23.0"
 pydantic = "^1.10.2"
 monthdelta = "^0.9.1"
+icmplib = "^3.0.3"
 
 [build-system]
 requires = ["poetry-core"]
