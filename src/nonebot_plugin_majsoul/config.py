@@ -3,7 +3,7 @@ from pydantic import BaseSettings
 
 
 class Config(BaseSettings):
-    majsoul_font: str
+    majsoul_query_timeout: float = 15.0
 
     class Config:
         extra = "ignore"

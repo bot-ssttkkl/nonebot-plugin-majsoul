@@ -15,6 +15,7 @@ from .data.models.room_rank import RoomRank, all_four_player_room_rank, all_thre
 from .mappers.game_record import map_game_record
 from .mappers.room_rank import map_room_rank
 from .parsers.room_rank import try_parse_room_rank
+from ..config import conf
 from ..interceptors.handle_error import handle_error
 from ..utils.send_message import send_forward_msg
 
@@ -39,7 +40,11 @@ def make_handler(player_num: PlayerNum):
                         kwargs["room_rank"] = room_rank[1]
                     continue
 
-        await wait_for(handle_query_majsoul_records(nickname, player_num, **kwargs), timeout=15)
+        coro = handle_query_majsoul_records(nickname, player_num, **kwargs)
+        if conf.majsoul_query_timeout:
+            await wait_for(coro, timeout=conf.majsoul_query_timeout)
+        else:
+            await coro
 
     return query_majsoul_records
 

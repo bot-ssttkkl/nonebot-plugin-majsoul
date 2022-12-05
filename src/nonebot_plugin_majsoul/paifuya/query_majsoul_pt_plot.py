@@ -27,6 +27,7 @@ from .mappers.player_num import map_player_num
 from .mappers.player_rank import map_player_rank
 from .parsers.limit_of_games import try_parse_limit_of_games
 from .parsers.time_span import try_parse_time_span
+from ..config import conf
 from ..interceptors.handle_error import handle_error
 
 _executor = ThreadPoolExecutor(cpu_count())
@@ -55,7 +56,11 @@ def make_handler(player_num: PlayerNum):
                     kwargs["limit"] = limit
                     continue
 
-        await wait_for(handle_query_majsoul_pt_plot(matcher, nickname, player_num, **kwargs), timeout=15)
+        coro = handle_query_majsoul_pt_plot(matcher, nickname, player_num, **kwargs)
+        if conf.majsoul_query_timeout:
+            await wait_for(coro, timeout=conf.majsoul_query_timeout)
+        else:
+            await coro
 
     return query_majsoul_pt_plot
 
