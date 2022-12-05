@@ -1,15 +1,14 @@
-from .general import map_digit
 from ..data.models.player_rank import PlayerRank, PlayerMajorRank
 
 _MAJOR_RANK_MAPPING = {
-    PlayerMajorRank.novice: "初心",
-    PlayerMajorRank.adept: "雀士",
-    PlayerMajorRank.expert: "雀杰",
-    PlayerMajorRank.master: "雀豪",
-    PlayerMajorRank.saint: "雀圣",
-    PlayerMajorRank.celestial: "魂天",
+    PlayerMajorRank.novice: "心",
+    PlayerMajorRank.adept: "士",
+    PlayerMajorRank.expert: "杰",
+    PlayerMajorRank.master: "豪",
+    PlayerMajorRank.saint: "圣",
+    PlayerMajorRank.celestial: "魂",
 }
 
 
 def map_player_rank(rank: PlayerRank) -> str:
-    return _MAJOR_RANK_MAPPING[rank.major_rank] + map_digit(rank.minor_rank)
+    return _MAJOR_RANK_MAPPING[rank.major_rank] + str(rank.minor_rank)

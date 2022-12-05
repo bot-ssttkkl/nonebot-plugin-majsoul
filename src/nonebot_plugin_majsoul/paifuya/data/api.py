@@ -8,8 +8,10 @@ from icmplib import async_ping, NameLookupError, SocketAddressError, ICMPSocketE
 from nonebot import get_driver, logger
 
 from nonebot_plugin_majsoul.network.auto_retry import auto_retry
+from .models.game_record import GameRecord
 from .models.player_extended_stats import PlayerExtendedStats
 from .models.player_info import PlayerInfo
+from .models.player_num import PlayerNum
 from .models.player_stats import PlayerStats
 from .models.room_rank import RoomRank
 
@@ -164,7 +166,7 @@ class PaifuyaApi:
     @auto_retry
     @_prober.select_on_exception(HTTPError)
     async def player_records(self, player_id: int, start_time: datetime, end_time: datetime,
-                             room_rank: AbstractSet[RoomRank], limit: int, descending: bool = True) -> List[dict]:
+                             room_rank: AbstractSet[RoomRank], limit: int, descending: bool = True) -> List[GameRecord]:
         start_timestamp = int(start_time.timestamp() * 1000)
         end_timestamp = int(end_time.timestamp() * 1000)
         mode = ".".join(map(lambda x: str(x.value), room_rank))
@@ -172,10 +174,15 @@ class PaifuyaApi:
             URL(f"https://{_prober.host}/{self._baseurl}/player_records/{player_id}/{end_timestamp}/{start_timestamp}"),
             params={"mode": mode, "limit": str(limit), "descending": str(descending).lower()}
         )
-        return resp.json()
+        return [GameRecord.parse_obj(x) for x in resp.json()]
 
 
 four_player_api = PaifuyaApi(f"api/v2/pl4")
 three_player_api = PaifuyaApi(f"api/v2/pl3")
 
-__all__ = ("PaifuyaApi", "four_player_api", "three_player_api")
+paifuya_api = {
+    PlayerNum.four: four_player_api,
+    PlayerNum.three: three_player_api,
+}
+
+__all__ = ("PaifuyaApi", "four_player_api", "three_player_api", "paifuya_api")

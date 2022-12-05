@@ -10,7 +10,7 @@ from nonebot.internal.matcher import Matcher
 
 from nonebot_plugin_majsoul.errors import BadRequestError
 from nonebot_plugin_majsoul.interceptors.handle_error import handle_error
-from .data.api import four_player_api, three_player_api
+from .data.api import paifuya_api as api
 from .data.models.player_num import PlayerNum
 from .data.models.room_rank import all_four_player_room_rank, all_three_player_room_rank, RoomRank
 from .mappers.player_extended_stats import map_player_extended_stats
@@ -68,11 +68,6 @@ query_three_player_majsoul_info = make_handler(PlayerNum.three)
 query_three_player_majsoul_info = handle_error(query_three_player_majsoul_info_matcher)(query_three_player_majsoul_info)
 query_three_player_majsoul_info_matcher.append_handler(query_three_player_majsoul_info)
 
-api = {
-    PlayerNum.four: four_player_api,
-    PlayerNum.three: three_player_api,
-}
-
 
 async def handle_query_majsoul_info(matcher: Matcher, nickname: str, player_num: PlayerNum, *,
                                     room_rank: Optional[AbstractSet[RoomRank]] = None,
@@ -94,7 +89,6 @@ async def handle_query_majsoul_info(matcher: Matcher, nickname: str, player_num:
 
     if end_time is None:
         end_time = datetime.now(timezone.utc)
-
 
     with StringIO() as sio:
         players = await api[player_num].search_player(nickname)
@@ -159,6 +153,7 @@ async def handle_query_majsoul_info(matcher: Matcher, nickname: str, player_num:
                     url.write(f"?limit={limit}")
 
                 sio.write("\n")
+                sio.write("更多信息：")
                 sio.write(url.getvalue())
 
         await matcher.send(sio.getvalue())
