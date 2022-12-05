@@ -1,8 +1,9 @@
 from asyncio import create_task, sleep
 from datetime import datetime
-from typing import List, AbstractSet
+from functools import wraps
+from typing import List, AbstractSet, Optional
 
-from httpx import AsyncClient, URL
+from httpx import AsyncClient, URL, HTTPError
 from icmplib import async_ping, NameLookupError, SocketAddressError, ICMPSocketError
 from nonebot import get_driver, logger
 
@@ -39,15 +40,21 @@ class PaifuyaHostProber:
     def host(self) -> str:
         return self._host
 
-    async def select_host(self):
+    async def select_host(self, exclude: Optional[AbstractSet[str]] = None):
         logger.debug("paifuya host selecting...")
 
-        ping_tasks = [create_task(async_ping(h)) for h in _mirrors]
+        ping_tasks = [create_task(async_ping(h))
+                      if not exclude or h not in exclude
+                      else None
+                      for h in _mirrors]
 
         selected = None
         selected_rtt = None
 
         for i, ping_task in enumerate(ping_tasks):
+            if ping_task is None:
+                continue
+
             try:
                 ping_result = await ping_task
             except (NameLookupError, SocketAddressError, ICMPSocketError) as e:
@@ -68,12 +75,29 @@ class PaifuyaHostProber:
             return False
 
     async def _select_host_daemon(self):
-        while True:
-            if await self.select_host():
-                await sleep(10 * 60)
-            else:
-                logger.error(f"all ping to paifuya host has failed. will retry after 60s...")
-                await sleep(60)
+        try:
+            while True:
+                if await self.select_host():
+                    await sleep(10 * 60)
+                else:
+                    logger.error(f"all ping to paifuya host has failed. will retry after 60s...")
+                    await sleep(60)
+        except Exception as e:
+            logger.exception(e)
+
+    def select_on_exception(self, exc_type):
+        def decorator(func):
+            @wraps(func)
+            async def wrapper(*args, **kwargs):
+                try:
+                    return await func(*args, **kwargs)
+                except exc_type as e:
+                    await self.select_host(exclude={self._host})
+                    raise e
+
+            return wrapper
+
+        return decorator
 
 
 _prober = PaifuyaHostProber()
@@ -103,6 +127,7 @@ class PaifuyaApi:
         await self.client.aclose()
 
     @auto_retry
+    @_prober.select_on_exception(HTTPError)
     async def search_player(self, nickname: str, *, limit: int = 10) -> List[PlayerInfo]:
         resp = await self.client.get(
             URL(f"https://{_prober.host}/{self._baseurl}/search_player/{nickname}"),
@@ -111,6 +136,7 @@ class PaifuyaApi:
         return [PlayerInfo.parse_obj(x) for x in resp.json()]
 
     @auto_retry
+    @_prober.select_on_exception(HTTPError)
     async def player_stats(self, player_id: int, start_time: datetime, end_time: datetime,
                            room_rank: AbstractSet[RoomRank]) -> PlayerStats:
         start_timestamp = int(start_time.timestamp() * 1000)
@@ -123,6 +149,7 @@ class PaifuyaApi:
         return PlayerStats.parse_obj(resp.json())
 
     @auto_retry
+    @_prober.select_on_exception(HTTPError)
     async def player_extended_stats(self, player_id: int, start_time: datetime, end_time: datetime,
                                     room_rank: AbstractSet[RoomRank]) -> PlayerExtendedStats:
         start_timestamp = int(start_time.timestamp() * 1000)
@@ -135,6 +162,7 @@ class PaifuyaApi:
         return PlayerExtendedStats.parse_obj(resp.json())
 
     @auto_retry
+    @_prober.select_on_exception(HTTPError)
     async def player_records(self, player_id: int, start_time: datetime, end_time: datetime,
                              room_rank: AbstractSet[RoomRank], limit: int, descending: bool = True) -> List[dict]:
         start_timestamp = int(start_time.timestamp() * 1000)

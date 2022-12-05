@@ -146,10 +146,12 @@ async def handle_query_majsoul_info(matcher: Matcher, nickname: str, player_num:
             with StringIO() as url:
                 url.write(f"https://amae-koromo.sapk.ch/player/{players[0].id}/")
                 url.write(".".join(map(lambda x: str(x.value), room_rank)))
-                url.write("/")
-                url.write(start_time.strftime("yyyy-MM-dd"))
-                url.write("/")
-                url.write(end_time.strftime("yyyy-MM-dd"))
+                if not default_start_time:
+                    url.write("/")
+                    url.write(start_time.strftime("%Y-%m-%d"))
+                if not default_end_time:
+                    url.write("/")
+                    url.write(end_time.strftime("%Y-%m-%d"))
 
                 sio.write("\n")
                 sio.write(url.getvalue())
