@@ -30,7 +30,7 @@ class HostProber:
     def host(self) -> str:
         return self._host
 
-    async def select_host(self, exclude: Optional[AbstractSet[str]] = None):
+    async def select_host(self, exclude: Optional[AbstractSet[str]] = None) -> bool:
         logger.debug("paifuya host selecting...")
 
         ping_tasks = [create_task(async_ping(h))
@@ -84,7 +84,8 @@ class HostProber:
         except Exception as e:
             logger.exception(e)
 
-    def select_on_exception(self, exc_type: Union[Type[Exception], Tuple[Type[Exception], ...]]):
+    def select_on_exception(self, exc_type: Union[Type[Exception], Tuple[Type[Exception], ...]]) -> \
+            Callable[[Callable[P, T]], Callable[P, T]]:
         def decorator(func: Callable[P, T]) -> Callable[P, T]:
             @wraps(func)
             async def wrapper(*args: P.args, **kwargs: P.kwargs) -> T:
