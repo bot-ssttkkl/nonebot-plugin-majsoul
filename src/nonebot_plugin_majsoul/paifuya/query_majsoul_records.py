@@ -12,7 +12,7 @@ from nonebot_plugin_majsoul.errors import BadRequestError
 from .data.api import paifuya_api as api
 from .data.models.player_num import PlayerNum
 from .data.models.room_rank import RoomRank, all_four_player_room_rank, all_three_player_room_rank
-from .mappers.map_game_record import map_game_record
+from .mappers.game_record import map_game_record
 from .mappers.room_rank import map_room_rank
 from .parsers.room_rank import try_parse_room_rank
 from ..interceptors.handle_error import handle_error
