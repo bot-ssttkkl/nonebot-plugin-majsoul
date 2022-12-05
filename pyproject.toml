@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "nonebot-plugin-majsoul"
-version = "0.0.1"
+version = "0.0.2"
 description = ""
 authors = ["ssttkkl <huang.wen.long@hotmail.com>"]
 license = "AGPL-3.0"
@@ -12,6 +12,8 @@ packages = [
 [tool.poetry.dependencies]
 python = "^3.9"
 nonebot2 = "^2.0.0rc1"
+nonebot-adapter-onebot = "^2.1.5"
+tzlocal = "^4.2"
 httpx = "^0.23.0"
 pydantic = "^1.10.2"
 monthdelta = "^0.9.1"
