@@ -1,9 +1,10 @@
 from asyncio import create_task, sleep, shield
 from functools import wraps
-from typing import AbstractSet, Optional, TypeVar, ParamSpec, Union, Type, Tuple, Callable, Sequence
+from typing import AbstractSet, Optional, TypeVar, Union, Type, Tuple, Callable, Sequence
 
 from icmplib import async_ping, NameLookupError, SocketAddressError, ICMPSocketError
 from nonebot import get_driver, logger
+from typing_extensions import ParamSpec
 
 from ..utils.percentile import percentile_str
 

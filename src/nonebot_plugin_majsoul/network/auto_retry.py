@@ -1,8 +1,9 @@
 from functools import wraps
-from typing import TypeVar, ParamSpec, Callable
+from typing import TypeVar, Callable
 
 from httpx import HTTPError
 from nonebot import logger
+from typing_extensions import ParamSpec
 
 T = TypeVar('T')
 P = ParamSpec('P')

@@ -19,6 +19,7 @@ pydantic = "^1.10.2"
 monthdelta = "^0.9.1"
 icmplib = "^3.0.3"
 matplotlib = "^3.6.2"
+typing-extensions = "^4.4.0"
 
 [build-system]
 requires = ["poetry-core"]
