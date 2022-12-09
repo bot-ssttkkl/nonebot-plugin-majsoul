@@ -23,7 +23,7 @@ from .parsers.time_span import try_parse_time_span
 
 
 def make_handler(player_num: PlayerNum):
-    async def query_majsoul_info(matcher: Matcher, event: Event):
+    async def majsoul_info(matcher: Matcher, event: Event):
         args = event.get_message().extract_plain_text().split()
         cmd, args = args[0], args[1:]
 
@@ -58,31 +58,31 @@ def make_handler(player_num: PlayerNum):
                     kwargs["limit"] = limit
                     continue
 
-        coro = handle_query_majsoul_info(matcher, nickname, player_num, **kwargs)
+        coro = handle_majsoul_info(matcher, nickname, player_num, **kwargs)
         if conf.majsoul_query_timeout:
-            await wait_for(coro, timeout=conf.majsoul_query_timeout)
+            await wait_for(coro, timeout=conf.majsoul_timeout)
         else:
             await coro
 
-    return query_majsoul_info
+    return majsoul_info
 
 
-query_four_player_majsoul_info_matcher = on_command('雀魂信息', aliases={'雀魂查询'})
-query_four_player_majsoul_info = make_handler(PlayerNum.four)
-query_four_player_majsoul_info = handle_error(query_four_player_majsoul_info_matcher)(query_four_player_majsoul_info)
-query_four_player_majsoul_info_matcher.append_handler(query_four_player_majsoul_info)
+four_player_majsoul_info_matcher = on_command('雀魂信息', aliases={'雀魂查询'})
+four_player_majsoul_info = make_handler(PlayerNum.four)
+four_player_majsoul_info = handle_error(four_player_majsoul_info_matcher)(four_player_majsoul_info)
+four_player_majsoul_info_matcher.append_handler(four_player_majsoul_info)
 
-query_three_player_majsoul_info_matcher = on_command('雀魂三麻信息', aliases={'雀魂三麻查询'})
-query_three_player_majsoul_info = make_handler(PlayerNum.three)
-query_three_player_majsoul_info = handle_error(query_three_player_majsoul_info_matcher)(query_three_player_majsoul_info)
-query_three_player_majsoul_info_matcher.append_handler(query_three_player_majsoul_info)
+three_player_majsoul_info_matcher = on_command('雀魂三麻信息', aliases={'雀魂三麻查询'})
+three_player_majsoul_info = make_handler(PlayerNum.three)
+three_player_majsoul_info = handle_error(three_player_majsoul_info_matcher)(three_player_majsoul_info)
+three_player_majsoul_info_matcher.append_handler(three_player_majsoul_info)
 
 
-async def handle_query_majsoul_info(matcher: Matcher, nickname: str, player_num: PlayerNum, *,
-                                    room_rank: Optional[AbstractSet[RoomRank]] = None,
-                                    start_time: Optional[datetime] = None,
-                                    end_time: Optional[datetime] = None,
-                                    limit: Optional[int] = None):
+async def handle_majsoul_info(matcher: Matcher, nickname: str, player_num: PlayerNum, *,
+                              room_rank: Optional[AbstractSet[RoomRank]] = None,
+                              start_time: Optional[datetime] = None,
+                              end_time: Optional[datetime] = None,
+                              limit: Optional[int] = None):
     default_start_time = start_time is None
     default_end_time = end_time is None
     default_limit = limit is None

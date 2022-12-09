@@ -34,7 +34,7 @@ _executor = ThreadPoolExecutor(cpu_count())
 
 
 def make_handler(player_num: PlayerNum):
-    async def query_majsoul_pt_plot(matcher: Matcher, event: MessageEvent):
+    async def majsoul_pt_plot(matcher: Matcher, event: MessageEvent):
         args = event.get_message().extract_plain_text().split()
         cmd, args = args[0], args[1:]
 
@@ -60,26 +60,26 @@ def make_handler(player_num: PlayerNum):
                     kwargs["limit"] = limit
                     continue
 
-        coro = handle_query_majsoul_pt_plot(matcher, nickname, player_num, **kwargs)
+        coro = handle_majsoul_pt_plot(matcher, nickname, player_num, **kwargs)
         if conf.majsoul_query_timeout:
-            await wait_for(coro, timeout=conf.majsoul_query_timeout)
+            await wait_for(coro, timeout=conf.majsoul_timeout)
         else:
             await coro
 
-    return query_majsoul_pt_plot
+    return majsoul_pt_plot
 
 
-query_four_player_majsoul_pt_plot_matcher = on_command("雀魂PT推移图", aliases={"雀魂PT图"})
-query_four_player_majsoul_pt_plot_records = make_handler(PlayerNum.four)
-query_four_player_majsoul_pt_plot_records = handle_error(query_four_player_majsoul_pt_plot_matcher)(
-    query_four_player_majsoul_pt_plot_records)
-query_four_player_majsoul_pt_plot_matcher.append_handler(query_four_player_majsoul_pt_plot_records)
+four_player_majsoul_pt_plot_matcher = on_command("雀魂PT推移图", aliases={"雀魂PT图"})
+four_player_majsoul_pt_plot_records = make_handler(PlayerNum.four)
+four_player_majsoul_pt_plot_records = handle_error(four_player_majsoul_pt_plot_matcher)(
+    four_player_majsoul_pt_plot_records)
+four_player_majsoul_pt_plot_matcher.append_handler(four_player_majsoul_pt_plot_records)
 
-query_three_player_majsoul_pt_plot_matcher = on_command("雀魂三麻PT推移图", aliases={"雀魂三麻PT图"})
-query_three_player_majsoul_pt_plot_records = make_handler(PlayerNum.three)
-query_three_player_majsoul_pt_plot_records = handle_error(query_three_player_majsoul_pt_plot_matcher)(
-    query_three_player_majsoul_pt_plot_records)
-query_three_player_majsoul_pt_plot_matcher.append_handler(query_three_player_majsoul_pt_plot_records)
+three_player_majsoul_pt_plot_matcher = on_command("雀魂三麻PT推移图", aliases={"雀魂三麻PT图"})
+three_player_majsoul_pt_plot_records = make_handler(PlayerNum.three)
+three_player_majsoul_pt_plot_records = handle_error(three_player_majsoul_pt_plot_matcher)(
+    three_player_majsoul_pt_plot_records)
+three_player_majsoul_pt_plot_matcher.append_handler(three_player_majsoul_pt_plot_records)
 
 _color = {RoomRank.four_player_throne_south: 'r',
           RoomRank.four_player_throne_east: 'r',
@@ -106,6 +106,8 @@ def draw(bio: BytesIO,
     pre_rank = max_rank = initial_level.id
     pre_pt = pt = initial_level.score + initial_level.delta
     base = pre_rank.max_pt // 2
+
+    ax.text(3, 100, '\n'.join(map_player_rank(pre_rank)), fontsize=15)
 
     for i, r in enumerate(records):
         for p in r.players:
@@ -148,10 +150,10 @@ def draw(bio: BytesIO,
     fig.savefig(bio, format='png')
 
 
-async def handle_query_majsoul_pt_plot(matcher: Matcher, nickname: str, player_num: PlayerNum, *,
-                                       start_time: Optional[datetime] = None,
-                                       end_time: Optional[datetime] = None,
-                                       limit: Optional[int] = None):
+async def handle_majsoul_pt_plot(matcher: Matcher, nickname: str, player_num: PlayerNum, *,
+                                 start_time: Optional[datetime] = None,
+                                 end_time: Optional[datetime] = None,
+                                 limit: Optional[int] = None):
     if player_num == PlayerNum.four:
         room_rank = all_four_player_room_rank
     elif player_num == PlayerNum.three:

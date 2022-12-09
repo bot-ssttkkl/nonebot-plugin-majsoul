@@ -21,7 +21,7 @@ from .parsers.room_rank import try_parse_room_rank
 
 
 def make_handler(player_num: PlayerNum):
-    async def query_majsoul_records(event: MessageEvent):
+    async def majsoul_records(event: MessageEvent):
         args = event.get_message().extract_plain_text().split()
         cmd, args = args[0], args[1:]
 
@@ -44,30 +44,30 @@ def make_handler(player_num: PlayerNum):
                         kwargs["room_rank"] = room_rank[1]
                     continue
 
-        coro = handle_query_majsoul_records(nickname, player_num, **kwargs)
+        coro = handle_majsoul_records(nickname, player_num, **kwargs)
         if conf.majsoul_query_timeout:
-            await wait_for(coro, timeout=conf.majsoul_query_timeout)
+            await wait_for(coro, timeout=conf.majsoul_timeout)
         else:
             await coro
 
-    return query_majsoul_records
+    return majsoul_records
 
 
-query_four_player_majsoul_records_matcher = on_command("雀魂牌谱", aliases={'雀魂对局'})
-query_four_player_majsoul_records = make_handler(PlayerNum.four)
-query_four_player_majsoul_records = handle_error(query_four_player_majsoul_records_matcher)(
-    query_four_player_majsoul_records)
-query_four_player_majsoul_records_matcher.append_handler(query_four_player_majsoul_records)
+four_player_majsoul_records_matcher = on_command("雀魂牌谱", aliases={'雀魂对局'})
+four_player_majsoul_records = make_handler(PlayerNum.four)
+four_player_majsoul_records = handle_error(four_player_majsoul_records_matcher)(
+    four_player_majsoul_records)
+four_player_majsoul_records_matcher.append_handler(four_player_majsoul_records)
 
-query_three_player_majsoul_records_matcher = on_command("雀魂三麻牌谱", aliases={'雀魂三麻对局'})
-query_three_player_majsoul_records = make_handler(PlayerNum.three)
-query_three_player_majsoul_records = handle_error(query_three_player_majsoul_records_matcher)(
-    query_three_player_majsoul_records)
-query_three_player_majsoul_records_matcher.append_handler(query_three_player_majsoul_records)
+three_player_majsoul_records_matcher = on_command("雀魂三麻牌谱", aliases={'雀魂三麻对局'})
+three_player_majsoul_records = make_handler(PlayerNum.three)
+three_player_majsoul_records = handle_error(three_player_majsoul_records_matcher)(
+    three_player_majsoul_records)
+three_player_majsoul_records_matcher.append_handler(three_player_majsoul_records)
 
 
-async def handle_query_majsoul_records(nickname: str, player_num: PlayerNum, *,
-                                       room_rank: Optional[AbstractSet[RoomRank]] = None):
+async def handle_majsoul_records(nickname: str, player_num: PlayerNum, *,
+                                 room_rank: Optional[AbstractSet[RoomRank]] = None):
     if room_rank is None:
         if player_num == PlayerNum.four:
             room_rank = all_four_player_room_rank
