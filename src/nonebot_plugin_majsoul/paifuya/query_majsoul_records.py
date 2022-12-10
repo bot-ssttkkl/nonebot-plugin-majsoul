@@ -46,7 +46,7 @@ def make_handler(player_num: PlayerNum):
 
         coro = handle_majsoul_records(nickname, player_num, **kwargs)
         if conf.majsoul_query_timeout:
-            await wait_for(coro, timeout=conf.majsoul_timeout)
+            await wait_for(coro, timeout=conf.majsoul_query_timeout)
         else:
             await coro
 
