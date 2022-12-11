@@ -23,6 +23,7 @@ from .mappers.game_record import map_game_record
 from .mappers.room_rank import map_room_rank
 from .parsers.room_rank import try_parse_room_rank
 from ..utils.my_executor import run_in_my_executor
+from ..utils.rank import ranked
 
 
 def make_handler(player_num: PlayerNum):
@@ -76,14 +77,13 @@ def draw_records_plot(bio: BytesIO, records: Sequence[GameRecord], player_id: in
     ax: Axes = fig.add_subplot(1, 1, 1)
 
     rank = []
-
     for r in records:
-        for j, p in enumerate(r.players):
+        for i, p in ranked(r.players, key=lambda x: x.pt, reverse=True):
             if p.id != player_id:
                 continue
 
-            rank.append(j + 1)
-
+            rank.append(i)
+    rank.reverse()
     ax.plot(range(1, len(records) + 1), rank, marker='o')
 
     # 设置X轴与Y轴范围
@@ -91,8 +91,7 @@ def draw_records_plot(bio: BytesIO, records: Sequence[GameRecord], player_id: in
     ax.set_xlim(0.5, len(records) + 0.5)
     ax.set_ylim(0.75, 4.25)
 
-    # 反转X轴与Y轴
-    ax.invert_xaxis()
+    # 反转Y轴
     ax.invert_yaxis()
 
     # 移除边框
