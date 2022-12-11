@@ -1,10 +1,6 @@
-import asyncio
 from asyncio import wait_for
-from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
-from functools import partial
 from io import BytesIO
-from multiprocessing import cpu_count
 from typing import Sequence, Optional
 
 import matplotlib.pyplot as plt
@@ -29,8 +25,7 @@ from .mappers.player_num import map_player_num
 from .mappers.player_rank import map_player_rank
 from .parsers.limit_of_games import try_parse_limit_of_games
 from .parsers.time_span import try_parse_time_span
-
-_executor = ThreadPoolExecutor(cpu_count())
+from ..utils.my_executor import run_in_my_executor
 
 
 def make_handler(player_num: PlayerNum):
@@ -223,8 +218,7 @@ async def handle_majsoul_pt_plot(matcher: Matcher, nickname: str, player_num: Pl
         await matcher.send(msg)
     else:
         with BytesIO() as bio:
-            loop = asyncio.get_running_loop()
-            await loop.run_in_executor(_executor, partial(draw, bio, player_num, player, initial_level, records))
+            await run_in_my_executor(draw, bio, player_num, player, initial_level, records)
 
             await matcher.send(Message([
                 MessageSegment.text(msg),

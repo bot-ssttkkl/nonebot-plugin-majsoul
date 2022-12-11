@@ -1,9 +1,12 @@
 from asyncio import wait_for
 from datetime import datetime, timezone
-from io import StringIO
-from typing import Optional, AbstractSet, cast
+from io import StringIO, BytesIO
+from typing import Optional, AbstractSet, cast, Sequence
 
+import matplotlib.pyplot as plt
 from httpx import HTTPStatusError
+from matplotlib.axes import Axes
+from matplotlib.figure import Figure
 from nonebot import on_command
 from nonebot.adapters.onebot.v11 import Message, MessageSegment, MessageEvent
 from nonebot.internal.matcher import current_matcher, current_event, current_bot
@@ -13,11 +16,13 @@ from nonebot_plugin_majsoul.errors import BadRequestError
 from nonebot_plugin_majsoul.interceptors.handle_error import handle_error
 from nonebot_plugin_majsoul.utils.send_message import send_forward_msg
 from .data.api import paifuya_api as api
+from .data.models.game_record import GameRecord
 from .data.models.player_num import PlayerNum
 from .data.models.room_rank import RoomRank, all_four_player_room_rank, all_three_player_room_rank
 from .mappers.game_record import map_game_record
 from .mappers.room_rank import map_room_rank
 from .parsers.room_rank import try_parse_room_rank
+from ..utils.my_executor import run_in_my_executor
 
 
 def make_handler(player_num: PlayerNum):
@@ -53,17 +58,56 @@ def make_handler(player_num: PlayerNum):
     return majsoul_records
 
 
-four_player_majsoul_records_matcher = on_command("雀魂牌谱", aliases={'雀魂对局'})
+four_player_majsoul_records_matcher = on_command("雀魂最近对局", aliases={'雀魂对局', '雀魂牌谱'})
 four_player_majsoul_records = make_handler(PlayerNum.four)
 four_player_majsoul_records = handle_error(four_player_majsoul_records_matcher)(
     four_player_majsoul_records)
 four_player_majsoul_records_matcher.append_handler(four_player_majsoul_records)
 
-three_player_majsoul_records_matcher = on_command("雀魂三麻牌谱", aliases={'雀魂三麻对局'})
+three_player_majsoul_records_matcher = on_command("雀魂三麻最近对局", aliases={'雀魂三麻对局', '雀魂三麻牌谱'})
 three_player_majsoul_records = make_handler(PlayerNum.three)
 three_player_majsoul_records = handle_error(three_player_majsoul_records_matcher)(
     three_player_majsoul_records)
 three_player_majsoul_records_matcher.append_handler(three_player_majsoul_records)
+
+
+def draw_records_plot(bio: BytesIO, records: Sequence[GameRecord], player_id: int):
+    fig: Figure = plt.figure(facecolor='w', figsize=(12, 2))
+    ax: Axes = fig.add_subplot(1, 1, 1)
+
+    rank = []
+
+    for r in records:
+        for j, p in enumerate(r.players):
+            if p.id != player_id:
+                continue
+
+            rank.append(j + 1)
+
+    ax.plot(range(1, len(records) + 1), rank, marker='o')
+
+    # 设置X轴与Y轴范围
+    ax.set_yticks([1, 2, 3, 4], fontsize=20)
+    ax.set_xlim(0.5, len(records) + 0.5)
+    ax.set_ylim(0.75, 4.25)
+
+    # 反转X轴与Y轴
+    ax.invert_xaxis()
+    ax.invert_yaxis()
+
+    # 移除边框
+    ax.spines['top'].set_visible(False)
+    ax.spines['right'].set_visible(False)
+    ax.spines['bottom'].set_visible(False)
+    ax.spines['left'].set_visible(False)
+
+    # 显示网格
+    ax.grid(axis='y')
+
+    # 隐藏X轴
+    ax.get_xaxis().set_visible(False)
+
+    fig.savefig(bio, format='png')
 
 
 async def handle_majsoul_records(nickname: str, player_num: PlayerNum, *,
@@ -109,16 +153,20 @@ async def handle_majsoul_records(nickname: str, player_num: PlayerNum, *,
         msgs.append(Message(MessageSegment.text(msg.strip())))
 
         if records:
+            with BytesIO() as bio:
+                await run_in_my_executor(draw_records_plot, bio, records, players[0].id)
+                msgs.append(Message(MessageSegment.image(bio)))
+
             for i, r in enumerate(records):
                 with StringIO() as sio:
                     map_game_record(sio, r, players[0].id)
                     msgs.append(Message(MessageSegment.text(sio.getvalue().strip())))
 
-        with StringIO() as url:
-            url.write(f"https://amae-koromo.sapk.ch/player/{players[0].id}/")
-            url.write(".".join(map(lambda x: str(x.value), room_rank)))
+            with StringIO() as url:
+                url.write(f"https://amae-koromo.sapk.ch/player/{players[0].id}/")
+                url.write(".".join(map(lambda x: str(x.value), room_rank)))
 
-            msgs.append(Message(MessageSegment.text(f"更多信息：{url.getvalue()}")))
+                msgs.append(Message(MessageSegment.text(f"更多信息：{url.getvalue()}")))
 
     if len(msgs) == 1:
         await current_matcher.get().send(msgs[0])
