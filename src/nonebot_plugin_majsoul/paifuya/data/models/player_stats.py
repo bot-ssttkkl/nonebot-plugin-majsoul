@@ -16,7 +16,7 @@ class PlayerStats(BaseModel):
     rank_rates: List[float]
     rank_avg_score: List[Optional[float]]
     avg_rank: float
-    negative_rate: float
+    # negative_rate: float
 
     class Config:
         extra = Extra.ignore
