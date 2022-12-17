@@ -62,6 +62,14 @@ _✨ 雀魂信息查询插件 ✨_
 - [nonebot-plugin-mahjong-scoreboard](https://github.com/ssttkkl/nonebot-plugin-mahjong-scoreboard)
   ：日麻计分器。为面麻群友提供日麻对局分数记录。根据马点进行PT精算，统计PT增减，支持对局与榜单查询与导出。
 
+## 在线乞讨
+
+<details><summary>点击请我打两把maimai</summary>
+
+![](https://github.com/ssttkkl/ssttkkl/blob/main/afdian-ssttkkl.jfif)
+
+</details>
+
 ## LICENSE
 
-AGPLv3
+[AGPLv3](https://raw.githubusercontent.com/ssttkkl/nonebot-plugin-majsoul/master/LICENSE)
