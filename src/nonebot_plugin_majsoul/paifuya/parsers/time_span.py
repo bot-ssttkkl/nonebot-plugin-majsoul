@@ -1,9 +1,9 @@
 import re
 from datetime import datetime, timezone, timedelta
+from monthdelta import monthdelta
 from typing import Optional, Tuple
 
-from monthdelta import monthdelta
-
+from nonebot_plugin_majsoul.errors import BadRequestError
 from nonebot_plugin_majsoul.utils.decode_integer import decode_integer
 
 
@@ -15,6 +15,9 @@ def try_parse_time_span(raw: str) -> Optional[Tuple[datetime, datetime]]:
             num = decode_integer(num)
         except ValueError:
             return None
+
+        if num <= 0:
+            raise BadRequestError("时间不合法")
 
         end_time = datetime.now(timezone.utc)
 
