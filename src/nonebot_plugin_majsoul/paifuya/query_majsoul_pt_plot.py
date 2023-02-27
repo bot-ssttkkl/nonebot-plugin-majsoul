@@ -136,8 +136,7 @@ def draw(bio: BytesIO,
     ax.set_xlabel('对局数', fontsize=20)
     ax.set_ylabel('PT', fontsize=20)
 
-    # ax.set_xticks(fontsize=20)
-    ax.set_yticks([i * 1000 for i in range(11)], fontsize=20)
+    ax.set_yticks([i * 1000 for i in range(11)], labels=[i * 1000 for i in range(11)], fontsize=20)
 
     ax.set_xlim(0, len(records))
     ax.set_ylim(0, max_rank.max_pt + 100)
