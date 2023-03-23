@@ -1,20 +1,20 @@
 from asyncio import wait_for
 from datetime import datetime, timezone
 from io import StringIO, BytesIO
-from typing import Optional, AbstractSet, cast, Sequence
+from typing import Optional, AbstractSet, Sequence, Text, List
 
 import matplotlib.pyplot as plt
 from httpx import HTTPStatusError
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure
 from nonebot import on_command
-from nonebot.adapters.onebot.v11 import Message, MessageSegment, MessageEvent
-from nonebot.internal.matcher import current_matcher, current_event, current_bot
+from nonebot.internal.adapter import Event
+from nonebot.internal.matcher import current_bot
+from nonebot_plugin_saa import MessageFactory, AggregatedMessageFactory, Image
 
 from nonebot_plugin_majsoul.config import conf
 from nonebot_plugin_majsoul.errors import BadRequestError
 from nonebot_plugin_majsoul.interceptors.handle_error import handle_error
-from nonebot_plugin_majsoul.utils.send_message import send_forward_msg
 from .data.api import paifuya_api as api
 from .data.models.game_record import GameRecord
 from .data.models.player_num import PlayerNum
@@ -27,7 +27,7 @@ from ..utils.rank import ranked
 
 
 def make_handler(player_num: PlayerNum):
-    async def majsoul_records(event: MessageEvent):
+    async def majsoul_records(event: Event):
         args = event.get_message().extract_plain_text().split()
         cmd, args = args[0], args[1:]
 
@@ -120,11 +120,11 @@ async def handle_majsoul_records(nickname: str, player_num: PlayerNum, *,
     start_time = datetime.fromisoformat("2010-01-01T00:00:00")
     end_time = datetime.now(timezone.utc)
 
-    msgs = []
+    msgs: List[MessageFactory] = []
 
     players = await api[player_num].search_player(nickname)
     if len(players) == 0:
-        msgs.append(Message(MessageSegment.text("没有查询到该角色在金之间以上的对局数据呢~")))
+        msgs.append(MessageFactory(Text("没有查询到该角色在金之间以上的对局数据呢~")))
     else:
         try:
             records = await api[player_num].player_records(
@@ -149,26 +149,31 @@ async def handle_majsoul_records(nickname: str, player_num: PlayerNum, *,
         if not records:
             msg += f"\n\n没有查询到{room_rank_text}的对局数据呢~"
 
-        msgs.append(Message(MessageSegment.text(msg.strip())))
+        msgs.append(MessageFactory(Text(msg.strip())))
 
         if records:
             with BytesIO() as bio:
                 await run_in_my_executor(draw_records_plot, bio, records, players[0].id)
-                msgs.append(Message(MessageSegment.image(bio)))
+                msgs.append(MessageFactory(Image(bio)))
 
             for i, r in enumerate(records):
                 with StringIO() as sio:
                     map_game_record(sio, r, players[0].id)
-                    msgs.append(Message(MessageSegment.text(sio.getvalue().strip())))
+                    msgs.append(MessageFactory(Text(sio.getvalue().strip())))
 
             with StringIO() as url:
                 url.write(f"https://amae-koromo.sapk.ch/player/{players[0].id}/")
                 url.write(".".join(map(lambda x: str(x.value), room_rank)))
 
-                msgs.append(Message(MessageSegment.text(f"更多信息：{url.getvalue()}")))
+                msgs.append(MessageFactory(Text(f"更多信息：{url.getvalue()}")))
 
     if len(msgs) == 1:
-        await current_matcher.get().send(msgs[0])
+        await msgs[0].send(reply=True)
     else:
-        e = cast(MessageEvent, current_event.get())
-        await send_forward_msg(current_bot.get(), e, msgs)
+        adapter_name = current_bot.get().adapter.get_name()
+
+        if adapter_name in AggregatedMessageFactory.sender:
+            await AggregatedMessageFactory(msgs).send()
+        else:
+            for msg in msgs:
+                await msg.send(reply=True)

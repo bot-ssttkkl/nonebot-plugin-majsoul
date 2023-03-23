@@ -1,16 +1,15 @@
 from asyncio import wait_for
 from datetime import datetime, timezone
 from io import BytesIO
-from typing import Sequence, Optional
+from typing import Sequence, Optional, Text
 
 import matplotlib.pyplot as plt
 from httpx import HTTPStatusError
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure
 from nonebot import on_command
-from nonebot.adapters.onebot.v11 import MessageEvent, MessageSegment
-from nonebot.internal.adapter import Message
-from nonebot.internal.matcher import Matcher
+from nonebot.internal.adapter import Event
+from nonebot_plugin_saa import MessageFactory, Image
 
 from nonebot_plugin_majsoul.config import conf
 from nonebot_plugin_majsoul.errors import BadRequestError
@@ -29,7 +28,7 @@ from ..utils.my_executor import run_in_my_executor
 
 
 def make_handler(player_num: PlayerNum):
-    async def majsoul_pt_plot(matcher: Matcher, event: MessageEvent):
+    async def majsoul_pt_plot(event: Event):
         args = event.get_message().extract_plain_text().split()
         cmd, args = args[0], args[1:]
 
@@ -55,7 +54,7 @@ def make_handler(player_num: PlayerNum):
                     kwargs["limit"] = limit
                     continue
 
-        coro = handle_majsoul_pt_plot(matcher, nickname, player_num, **kwargs)
+        coro = handle_majsoul_pt_plot(nickname, player_num, **kwargs)
         if conf.majsoul_query_timeout:
             await wait_for(coro, timeout=conf.majsoul_query_timeout)
         else:
@@ -144,7 +143,7 @@ def draw(bio: BytesIO,
     fig.savefig(bio, format='png')
 
 
-async def handle_majsoul_pt_plot(matcher: Matcher, nickname: str, player_num: PlayerNum, *,
+async def handle_majsoul_pt_plot(nickname: str, player_num: PlayerNum, *,
                                  start_time: Optional[datetime] = None,
                                  end_time: Optional[datetime] = None,
                                  limit: Optional[int] = None):
@@ -160,7 +159,9 @@ async def handle_majsoul_pt_plot(matcher: Matcher, nickname: str, player_num: Pl
 
     players = await api[player_num].search_player(nickname)
     if len(players) == 0:
-        await matcher.send("没有查询到该角色在金之间以上的对局数据呢~")
+        await MessageFactory(
+            Text("没有查询到该角色在金之间以上的对局数据呢~")
+        ).send(reply=True)
         return
 
     player = players[0]
@@ -169,7 +170,6 @@ async def handle_majsoul_pt_plot(matcher: Matcher, nickname: str, player_num: Pl
     if len(players) > 1:
         msg += "查询到多条角色昵称呢~，若输出不是您想查找的昵称，请补全查询昵称。\n"
     msg += f"昵称：{player.nickname}\n"
-    msg += "PS：本数据不包含金之间以下对局以及2019.11.29之前的对局"
 
     try:
         records = []
@@ -208,18 +208,20 @@ async def handle_majsoul_pt_plot(matcher: Matcher, nickname: str, player_num: Pl
                     break
     except HTTPStatusError as e:
         if e.response.status_code == 404:
-            await matcher.send("没有查询到该角色在金之间以上的对局数据呢~")
+            await MessageFactory(
+                Text("没有查询到该角色在金之间以上的对局数据呢~")
+            ).send(reply=True)
             return
         else:
             raise e
 
     if not records:
-        await matcher.send(msg)
+        await MessageFactory(
+            Text(msg)
+        ).send(reply=True)
     else:
         with BytesIO() as bio:
             await run_in_my_executor(draw, bio, player_num, player, initial_level, records)
-
-            await matcher.send(Message([
-                MessageSegment.text(msg),
-                MessageSegment.image(bio)
-            ]))
+            await MessageFactory(
+                Image(bio)
+            ).send(reply=True)

@@ -5,9 +5,11 @@ nonebot-plugin-majsoul
 @License        : AGPLv3
 @GitHub         : https://github.com/ssttkkl/nonebot-plugin-majsoul
 """
+from nonebot import require
+
+require("nonebot_plugin_saa")
 
 from importlib import resources
-
 from matplotlib import font_manager, pyplot as plt
 
 from . import res

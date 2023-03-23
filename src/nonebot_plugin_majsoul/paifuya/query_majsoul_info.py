@@ -1,12 +1,12 @@
 from asyncio import create_task, wait_for
 from datetime import datetime, timezone
 from io import StringIO
-from typing import AbstractSet, Optional
+from typing import AbstractSet, Optional, Text
 
 from httpx import HTTPStatusError
 from nonebot import on_command
 from nonebot.internal.adapter import Event
-from nonebot.internal.matcher import Matcher
+from nonebot_plugin_saa import MessageFactory
 
 from nonebot_plugin_majsoul.config import conf
 from nonebot_plugin_majsoul.errors import BadRequestError
@@ -23,7 +23,7 @@ from .parsers.time_span import try_parse_time_span
 
 
 def make_handler(player_num: PlayerNum):
-    async def majsoul_info(matcher: Matcher, event: Event):
+    async def majsoul_info(event: Event):
         args = event.get_message().extract_plain_text().split()
         cmd, args = args[0], args[1:]
 
@@ -58,7 +58,7 @@ def make_handler(player_num: PlayerNum):
                     kwargs["limit"] = limit
                     continue
 
-        coro = handle_majsoul_info(matcher, nickname, player_num, **kwargs)
+        coro = handle_majsoul_info(nickname, player_num, **kwargs)
         if conf.majsoul_query_timeout:
             await wait_for(coro, timeout=conf.majsoul_query_timeout)
         else:
@@ -78,7 +78,7 @@ three_player_majsoul_info = handle_error(three_player_majsoul_info_matcher)(thre
 three_player_majsoul_info_matcher.append_handler(three_player_majsoul_info)
 
 
-async def handle_majsoul_info(matcher: Matcher, nickname: str, player_num: PlayerNum, *,
+async def handle_majsoul_info(nickname: str, player_num: PlayerNum, *,
                               room_rank: Optional[AbstractSet[RoomRank]] = None,
                               start_time: Optional[datetime] = None,
                               end_time: Optional[datetime] = None,
@@ -165,4 +165,5 @@ async def handle_majsoul_info(matcher: Matcher, nickname: str, player_num: Playe
                 sio.write("更多信息：")
                 sio.write(url.getvalue())
 
-        await matcher.send(sio.getvalue())
+        msg = sio.getvalue()
+        await MessageFactory(Text(msg)).send(reply=True)
