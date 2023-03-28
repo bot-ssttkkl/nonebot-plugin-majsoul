@@ -87,7 +87,7 @@ def draw_records_plot(bio: BytesIO, records: Sequence[GameRecord], player_id: in
     ax.plot(range(1, len(records) + 1), rank, marker='o')
 
     # 设置X轴与Y轴范围
-    ax.set_yticks([1, 2, 3, 4], fontsize=20)
+    ax.set_yticks([1, 2, 3, 4], labels=[1, 2, 3, 4])
     ax.set_xlim(0.5, len(records) + 0.5)
     ax.set_ylim(0.75, 4.25)
 
@@ -154,7 +154,7 @@ async def handle_majsoul_records(nickname: str, player_num: PlayerNum, *,
         if records:
             with BytesIO() as bio:
                 await run_in_my_executor(draw_records_plot, bio, records, players[0].id)
-                msgs.append(MessageFactory(Image(bio)))
+                msgs.append(MessageFactory(Image(bio.getvalue())))
 
             for i, r in enumerate(records):
                 with StringIO() as sio:
