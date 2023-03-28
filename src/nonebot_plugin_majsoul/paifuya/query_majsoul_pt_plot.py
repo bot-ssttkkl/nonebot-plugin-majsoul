@@ -103,6 +103,8 @@ def draw(bio: BytesIO,
 
     ax.text(3, 100, '\n'.join(map_player_rank(pre_rank)), fontsize=15)
 
+    is_celestial = False
+
     for i, r in enumerate(records):
         for p in r.players:
             if p.id != player.id:
@@ -119,7 +121,12 @@ def draw(bio: BytesIO,
                 base = rank.max_pt // 2
                 pt = pre_pt = base
 
-            pt += p.pt * 5 if rank.major_rank == PlayerMajorRank.celestial else p.pt
+            if rank.major_rank == PlayerMajorRank.celestial:
+                # 获取到的PT是魂珠*100（每20魂珠升一段），这里再缩放5倍
+                pt += p.pt * 5
+                is_celestial = True
+            else:
+                pt += p.pt
 
             ax.plot([i, i + 1], [pre_pt, pt], color='k', lw=1.5)
             ax.fill_between([i, i + 1], [pre_pt, pt], color=_color[r.room_rank], alpha=0.05)
@@ -133,9 +140,13 @@ def draw(bio: BytesIO,
                  f'（{records[0].start_time.strftime("%Y/%m/%d")}~{records[-1].start_time.strftime("%Y/%m/%d")}）',
                  fontsize=12, pad=5)
     ax.set_xlabel('对局数', fontsize=20)
+
     ax.set_ylabel('PT', fontsize=20)
 
-    ax.set_yticks([i * 1000 for i in range(11)], labels=[i * 1000 for i in range(11)], fontsize=20)
+    if not is_celestial:
+        ax.set_yticks([i * 1000 for i in range(11)], labels=[i * 1000 for i in range(11)])
+    else:
+        ax.set_yticks([i * 1000 for i in range(11)], labels=[f'{i * 1000} 魂珠{float(i * 2)}' for i in range(11)])
 
     ax.set_xlim(0, len(records))
     ax.set_ylim(0, max_rank.max_pt + 100)

@@ -27,7 +27,7 @@ _RANK_MAX_PT = {
     503: 9000,
 }
 
-_CELESTIAL_MAX_PT = 2000
+_CELESTIAL_MAX_PT = 10000
 
 
 @total_ordering
