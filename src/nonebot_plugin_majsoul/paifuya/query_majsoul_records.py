@@ -162,7 +162,10 @@ async def handle_majsoul_records(nickname: str, player_num: PlayerNum, *,
                     msgs.append(MessageFactory(Text(sio.getvalue().strip())))
 
             with StringIO() as url:
-                url.write(f"https://amae-koromo.sapk.ch/player/{players[0].id}/")
+                if player_num == PlayerNum.four:
+                    url.write(f"https://amae-koromo.sapk.ch/player/{players[0].id}/")
+                else:
+                    url.write(f"https://ikeda.sapk.ch/player/{players[0].id}/")
                 url.write(".".join(map(lambda x: str(x.value), room_rank)))
 
                 msgs.append(MessageFactory(Text(f"更多信息：{url.getvalue()}")))

@@ -109,28 +109,28 @@ async def handle_majsoul_info(nickname: str, player_num: PlayerNum, *,
 
             sio.write(f"昵称：{players[0].nickname}\n\n")
 
-            if limit is not None:
-                records = await api[player_num].player_records(
+            try:
+                if limit is not None:
+                    records = await api[player_num].player_records(
+                        players[0].id,
+                        start_time,
+                        end_time,
+                        room_rank,
+                        limit=limit,
+                        descending=True)
+                    start_time = records[-1].start_time
+
+                player_stats = create_task(api[player_num].player_stats(
                     players[0].id,
                     start_time,
                     end_time,
-                    room_rank,
-                    limit=limit,
-                    descending=True)
-                start_time = records[-1].start_time
+                    room_rank))
+                player_extended_stats = create_task(api[player_num].player_extended_stats(
+                    players[0].id,
+                    start_time,
+                    end_time,
+                    room_rank))
 
-            player_stats = create_task(api[player_num].player_stats(
-                players[0].id,
-                start_time,
-                end_time,
-                room_rank))
-            player_extended_stats = create_task(api[player_num].player_extended_stats(
-                players[0].id,
-                start_time,
-                end_time,
-                room_rank))
-
-            try:
                 player_stats = await player_stats
                 player_extended_stats = await player_extended_stats
             except HTTPStatusError as e:
@@ -150,7 +150,10 @@ async def handle_majsoul_info(nickname: str, player_num: PlayerNum, *,
             sio.write("\nPS：本数据不包含金之间以下对局以及2019.11.29之前的对局")
 
             with StringIO() as url:
-                url.write(f"https://amae-koromo.sapk.ch/player/{players[0].id}/")
+                if player_num == PlayerNum.four:
+                    url.write(f"https://amae-koromo.sapk.ch/player/{players[0].id}/")
+                else:
+                    url.write(f"https://ikeda.sapk.ch/player/{players[0].id}/")
                 url.write(".".join(map(lambda x: str(x.value), room_rank)))
                 if not default_start_time:
                     url.write("/")

@@ -11,6 +11,7 @@ class PlayerMajorRank(int, Enum):
     expert = 3
     master = 4
     saint = 5
+    celestial_old = 6
     celestial = 7
 
 
@@ -49,7 +50,7 @@ class PlayerRank(NamedTuple):
 
     @property
     def max_pt(self) -> int:
-        if self.major_rank != PlayerMajorRank.celestial:
+        if self.major_rank != PlayerMajorRank.celestial and self.major_rank != PlayerMajorRank.celestial_old:
             return _RANK_MAX_PT[self.major_rank * 100 + self.minor_rank]
         else:
             return _CELESTIAL_MAX_PT

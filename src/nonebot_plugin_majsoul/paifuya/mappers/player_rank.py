@@ -6,6 +6,7 @@ _MAJOR_RANK_MAPPING = {
     PlayerMajorRank.expert: "杰",
     PlayerMajorRank.master: "豪",
     PlayerMajorRank.saint: "圣",
+    PlayerMajorRank.celestial_old: "魂",
     PlayerMajorRank.celestial: "魂",
 }
 
