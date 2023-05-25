@@ -1,6 +1,6 @@
 import json
 import re
-from datetime import datetime
+from asyncio import wait_for
 
 from nonebot import on_command, logger, require
 from nonebot.adapters.onebot.v11 import Bot, GroupMessageEvent, MessageEvent
@@ -38,7 +38,11 @@ else:
 
         logger.opt(colors=True).info(f"Downloading paipu <y>{uuid}</y>")
         try:
-            record = await get_downloader().download(uuid)
+            coro = get_downloader().download(uuid)
+            if conf.majsoul_query_timeout:
+                record = await wait_for(coro, timeout=conf.majsoul_query_timeout)
+            else:
+                record = await coro
         except MajsoulDownloadError as e:
             logger.opt(colors=True).warning(f"Failed to download paipu <y>{uuid}</y>, code: {e.code}")
             if e.code == 1203:
