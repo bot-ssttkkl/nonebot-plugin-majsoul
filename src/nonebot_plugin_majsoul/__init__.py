@@ -39,3 +39,4 @@ __plugin_meta__ = PluginMetadata(
 )
 
 from . import paifuya
+from . import paipu

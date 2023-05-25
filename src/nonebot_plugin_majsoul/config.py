@@ -5,6 +5,9 @@ from pydantic import BaseSettings
 class Config(BaseSettings):
     majsoul_query_timeout: float = 15.0
 
+    majsoul_username: str = ""
+    majsoul_password: str = ""
+
     class Config:
         extra = "ignore"
 
