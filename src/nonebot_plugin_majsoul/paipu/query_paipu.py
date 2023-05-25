@@ -1,28 +1,32 @@
-import json
-import re
-from asyncio import wait_for
-
-from nonebot import on_command, logger, require
-from nonebot.adapters.onebot.v11 import Bot, GroupMessageEvent, MessageEvent
-from nonebot.params import CommandArg
-from tensoul.downloader import MajsoulDownloadError
+from nonebot import logger, get_driver
 
 from ..config import conf
 
-require("nonebot_plugin_gocqhttp_cross_machine_upload_file")
-
-from nonebot_plugin_gocqhttp_cross_machine_upload_file import upload_group_file, upload_private_file
-
-from .downloader import get_downloader
-from ..errors import BadRequestError
-from ..interceptors.handle_error import handle_error
-from ..utils.nonebot import default_cmd_start
-
-uuid_reg = re.compile(r"\d{6}-[\da-fA-F]{8}-[\da-fA-F]{4}-[\da-fA-F]{4}-[\da-fA-F]{4}-[\da-fA-F]{12}")
-
 if not conf.majsoul_username:
     logger.warning("majsoul_paipu is disabled because majsoul_username is not configured")
+elif get_driver().type != "fastapi":
+    logger.warning("majsoul_paipu is disabled because only FastAPI Driver is supported")
 else:
+    import json
+    import re
+    from asyncio import wait_for
+
+    from nonebot import on_command, logger, require
+    from nonebot.adapters.onebot.v11 import Bot, GroupMessageEvent, MessageEvent
+    from nonebot.params import CommandArg
+    from tensoul.downloader import MajsoulDownloadError
+
+    from .downloader import get_downloader
+    from ..errors import BadRequestError
+    from ..interceptors.handle_error import handle_error
+    from ..utils.nonebot import default_cmd_start
+
+    uuid_reg = re.compile(r"\d{6}-[\da-fA-F]{8}-[\da-fA-F]{4}-[\da-fA-F]{4}-[\da-fA-F]{4}-[\da-fA-F]{12}")
+
+    require("nonebot_plugin_gocqhttp_cross_machine_upload_file")
+
+    from nonebot_plugin_gocqhttp_cross_machine_upload_file import upload_group_file, upload_private_file
+
     query_majsoul_paipu_matcher = on_command("下载雀魂牌谱")
 
 
