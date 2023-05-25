@@ -8,6 +8,9 @@ class Config(BaseSettings):
     majsoul_username: str = ""
     majsoul_password: str = ""
 
+    majsoul_font: str = ""
+    majsoul_font_path: str = ""
+
     class Config:
         extra = "ignore"
 

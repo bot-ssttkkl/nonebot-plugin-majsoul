@@ -1,3 +1,4 @@
+import sys
 from asyncio import wait_for
 from datetime import datetime, timezone
 from io import BytesIO
@@ -5,6 +6,7 @@ from typing import Sequence, Optional, Text
 
 import matplotlib.pyplot as plt
 from httpx import HTTPStatusError
+from matplotlib import font_manager
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure
 from nonebot import on_command
@@ -25,6 +27,14 @@ from .mappers.player_rank import map_player_rank
 from .parsers.limit_of_games import try_parse_limit_of_games
 from .parsers.time_span import try_parse_time_span
 from ..utils.my_executor import run_in_my_executor
+
+if conf.majsoul_font:
+    plt.rcParams['font.sans-serif'] = conf.majsoul_font
+elif sys.platform == 'win32':
+    plt.rcParams['font.sans-serif'] = "Microsoft YaHei"
+
+if conf.majsoul_font_path:
+    font_manager.fontManager.addfont(conf.majsoul_font_path)
 
 
 def make_handler(player_num: PlayerNum):

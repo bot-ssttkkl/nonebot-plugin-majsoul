@@ -9,15 +9,7 @@ from nonebot import require
 
 require("nonebot_plugin_saa")
 
-from importlib import resources
-from matplotlib import font_manager, pyplot as plt
-
-from . import res
 from .utils.nonebot import default_cmd_start
-
-with resources.path(res, "LXGWWenKaiMonoLite-Regular.ttf") as path:
-    font_manager.fontManager.addfont(path)
-plt.rcParams['font.sans-serif'] = 'LXGW WenKai Mono Lite'
 
 help_text = f"""
 牌谱屋：
