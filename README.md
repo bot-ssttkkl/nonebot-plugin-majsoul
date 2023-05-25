@@ -50,7 +50,7 @@ _✨ 雀魂信息查询插件 ✨_
 
 #### 绘制个人PT推移图
 
-**若出现乱码，请参考下文配置字体**
+**若绘图出现乱码或是需要更换绘图字体，请参考下文进行字体配置**
 
 指令：`/雀魂(三麻)PT图 <雀魂账号> [最近<数量>场] [最近<数量>{天|周|个月|年}]`
 
@@ -64,17 +64,29 @@ _✨ 雀魂信息查询插件 ✨_
 
 指令：`/下载雀魂牌谱 <牌谱链接或UUID>`
 
+## 配置字体
+
+### 更换为系统已安装字体
+
+修改配置项`majsoul_font`为字体名。
+
+例如：配置`majsoul_font=Microsoft YaHei`将使用微软雅黑字体
+
+### 更换为外部字体
+
+修改配置项`majsoul_font_path`为字体路径，并修改配置项`majsoul_font`为字体名。
+
+例如：在 https://github.com/lxgw/LxgwWenKai-Lite/releases 下载LXGWWenKaiMonoLite-Regular.ttf并放置于bot根目录，配置`majsoul_font_path=LXGWWenKaiMonoLite-Regular.ttf`，配置`majsoul_font=LXGW WenKai Mono Lite`
+
 ## 配置项
 
 ### majsoul_query_timeout
 
-指令超时，设置为0则无限制。（单位：秒）
-
-默认值：`0`
+指令超时（单位：秒）
 
 ### majsoul_font
 
-绘图用的字体
+绘图用的字体名称
 
 ### majsoul_font_path
 
