@@ -4,8 +4,6 @@ from ..config import conf
 
 if not conf.majsoul_username:
     logger.warning("majsoul_paipu is disabled because majsoul_username is not configured")
-elif get_driver().type != "fastapi":
-    logger.warning("majsoul_paipu is disabled because only FastAPI Driver is supported")
 else:
     import json
     import re
