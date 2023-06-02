@@ -245,4 +245,4 @@ async def handle_majsoul_pt_plot(nickname: str, player_num: PlayerNum, *,
             await run_in_my_executor(draw, bio, player_num, player, initial_level, records)
             await MessageFactory(
                 Image(bio)
-            ).send(reply=True)
+            ).send()
