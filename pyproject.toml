@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "nonebot-plugin-majsoul"
-version = "0.2.1"
-description = ""
+version = "0.2.1.post1"
+description = "NoneBot2 雀魂信息查询插件"
 authors = ["ssttkkl <huang.wen.long@hotmail.com>"]
 license = "AGPL-3.0"
 readme = "README.md"
@@ -15,11 +15,10 @@ nonebot2 = {extras = ["httpx"], version = "^2.0.0"}
 nonebot-adapter-onebot = "^2.2.3"
 nonebot-plugin-send-anything-anywhere = ">=0.2.1"
 nonebot-plugin-gocqhttp-cross-machine-upload-file = ">=0.1.4"
-tzlocal = "^4.2"
+tzlocal = ">=4.2"
 monthdelta = "^0.9.1"
 icmplib = "^3.0.3"
 matplotlib = "^3.6.2"
-typing-extensions = "^4.4.0"
 tensoul = "^0.1.0"
 
 [build-system]
