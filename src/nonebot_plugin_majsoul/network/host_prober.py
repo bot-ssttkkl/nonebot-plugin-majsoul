@@ -1,6 +1,5 @@
-from asyncio import create_task, sleep, shield
-from functools import wraps
-from typing import AbstractSet, Optional, TypeVar, Union, Type, Tuple, Callable, Sequence
+from asyncio import create_task, sleep
+from typing import TypeVar, Sequence
 
 from icmplib import async_ping, NameLookupError, SocketAddressError, ICMPSocketError
 from nonebot import get_driver, logger
@@ -31,11 +30,11 @@ class HostProber:
     def host(self) -> str:
         return self._host
 
-    async def select_host(self, exclude: Optional[AbstractSet[str]] = None) -> bool:
+    async def select_host(self, exclude_current: bool = False) -> bool:
         logger.debug("paifuya host selecting...")
 
         ping_tasks = [create_task(async_ping(h))
-                      if not exclude or h not in exclude
+                      if not exclude_current or h == self._host
                       else None
                       for h in self._mirrors]
 
@@ -84,18 +83,3 @@ class HostProber:
                     await sleep(60)
         except Exception as e:
             logger.exception(e)
-
-    def select_on_exception(self, exc_type: Union[Type[Exception], Tuple[Type[Exception], ...]]) -> \
-            Callable[[Callable[P, T]], Callable[P, T]]:
-        def decorator(func: Callable[P, T]) -> Callable[P, T]:
-            @wraps(func)
-            async def wrapper(*args: P.args, **kwargs: P.kwargs) -> T:
-                try:
-                    return await func(*args, **kwargs)
-                except exc_type as e:
-                    await shield(self.select_host(exclude={self._host}))
-                    raise e
-
-            return wrapper
-
-        return decorator

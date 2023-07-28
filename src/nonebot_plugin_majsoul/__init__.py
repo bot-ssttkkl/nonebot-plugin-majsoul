@@ -9,9 +9,10 @@ from nonebot import require
 
 require("nonebot_plugin_saa")
 
+from .config import Config
 from .utils.nonebot import default_cmd_start
 
-help_text = f"""
+__usage__ = f"""
 牌谱屋：
 - {default_cmd_start}雀魂(三麻)信息 <雀魂账号> [<房间类型>] [最近<数量>场] [最近<数量>{{天|周|个月|年}}]
 - {default_cmd_start}雀魂(三麻)对局 <雀魂账号> [<房间类型>]
@@ -22,7 +23,7 @@ help_text = f"""
 
 以上命令格式中，以<>包裹的表示一个参数，以[]包裹的表示一个可选项。
 
-详细说明：参见https://github.com/ssttkkl/nonebot-plugin-majsoul
+详细说明：参见https://github.com/bot-ssttkkl/nonebot-plugin-majsoul
 """.strip()
 
 from nonebot.plugin import PluginMetadata
@@ -30,7 +31,11 @@ from nonebot.plugin import PluginMetadata
 __plugin_meta__ = PluginMetadata(
     name='雀魂查询',
     description='根据牌谱屋的数据查询雀魂账号信息',
-    usage=help_text
+    usage=__usage__,
+    type="application",
+    config=Config,
+    homepage="https://github.com/bot-ssttkkl/nonebot-plugin-majsoul",
+    supported_adapters={"~onebot.v11", "~onebot.v12", "~qqguild", "~telegram", "~kaiheila"}
 )
 
 from . import paifuya

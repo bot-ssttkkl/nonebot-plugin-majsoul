@@ -1,5 +1,6 @@
-from nonebot import logger, get_driver
+from nonebot import logger
 
+from .downloader import download_paipu
 from ..config import conf
 
 if not conf.majsoul_username:
@@ -14,7 +15,6 @@ else:
     from nonebot.params import CommandArg
     from tensoul.downloader import MajsoulDownloadError
 
-    from .downloader import get_downloader
     from ..errors import BadRequestError
     from ..interceptors.handle_error import handle_error
     from ..utils.nonebot import default_cmd_start
@@ -40,7 +40,7 @@ else:
 
         logger.opt(colors=True).info(f"Downloading paipu <y>{uuid}</y>")
         try:
-            coro = get_downloader().download(uuid)
+            coro = download_paipu(uuid)
             if conf.majsoul_query_timeout:
                 record = await wait_for(coro, timeout=conf.majsoul_query_timeout)
             else:
