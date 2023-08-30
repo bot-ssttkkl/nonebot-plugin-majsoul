@@ -11,10 +11,11 @@ from nonebot import on_command
 from nonebot.internal.adapter import Event
 from nonebot.internal.matcher import current_bot
 from nonebot_plugin_saa import MessageFactory, AggregatedMessageFactory, Image
+from ssttkkl_nonebot_utils.errors.errors import BadRequestError
+from ssttkkl_nonebot_utils.interceptor.handle_error import handle_error
+from ssttkkl_nonebot_utils.interceptor.with_handling_reaction import with_handling_reaction
 
 from nonebot_plugin_majsoul.config import conf
-from nonebot_plugin_majsoul.errors import BadRequestError
-from nonebot_plugin_majsoul.interceptors.handle_error import handle_error
 from .data.api import paifuya_api as api
 from .data.models.game_record import GameRecord
 from .data.models.player_num import PlayerNum
@@ -22,6 +23,7 @@ from .data.models.room_rank import RoomRank, all_four_player_room_rank, all_thre
 from .mappers.game_record import map_game_record
 from .mappers.room_rank import map_room_rank
 from .parsers.room_rank import try_parse_room_rank
+from ..errors import error_handlers
 from ..utils.my_executor import run_in_my_executor
 from ..utils.rank import ranked
 
@@ -61,14 +63,14 @@ def make_handler(player_num: PlayerNum):
 
 four_player_majsoul_records_matcher = on_command("雀魂最近对局", aliases={'雀魂对局', '雀魂牌谱'})
 four_player_majsoul_records = make_handler(PlayerNum.four)
-four_player_majsoul_records = handle_error(four_player_majsoul_records_matcher)(
-    four_player_majsoul_records)
+four_player_majsoul_records = with_handling_reaction()(four_player_majsoul_records)
+four_player_majsoul_records = handle_error(error_handlers)(four_player_majsoul_records)
 four_player_majsoul_records_matcher.append_handler(four_player_majsoul_records)
 
 three_player_majsoul_records_matcher = on_command("雀魂三麻最近对局", aliases={'雀魂三麻对局', '雀魂三麻牌谱'})
 three_player_majsoul_records = make_handler(PlayerNum.three)
-three_player_majsoul_records = handle_error(three_player_majsoul_records_matcher)(
-    three_player_majsoul_records)
+three_player_majsoul_records = with_handling_reaction()(three_player_majsoul_records)
+three_player_majsoul_records = handle_error(error_handlers)(three_player_majsoul_records)
 three_player_majsoul_records_matcher.append_handler(three_player_majsoul_records)
 
 

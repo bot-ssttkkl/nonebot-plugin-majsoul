@@ -1,10 +1,10 @@
 import re
 from datetime import datetime, timezone, timedelta
-from monthdelta import monthdelta
 from typing import Optional, Tuple
 
-from nonebot_plugin_majsoul.errors import BadRequestError
-from nonebot_plugin_majsoul.utils.decode_integer import decode_integer
+from monthdelta import monthdelta
+from ssttkkl_nonebot_utils.errors.errors import BadRequestError
+from ssttkkl_nonebot_utils.integer import decode_integer
 
 
 def try_parse_time_span(raw: str) -> Optional[Tuple[datetime, datetime]]:

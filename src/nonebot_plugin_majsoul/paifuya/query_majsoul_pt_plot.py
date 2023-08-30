@@ -12,10 +12,11 @@ from matplotlib.figure import Figure
 from nonebot import on_command
 from nonebot.internal.adapter import Event
 from nonebot_plugin_saa import MessageFactory, Image
+from ssttkkl_nonebot_utils.errors.errors import BadRequestError, QueryError
+from ssttkkl_nonebot_utils.interceptor.handle_error import handle_error
+from ssttkkl_nonebot_utils.interceptor.with_handling_reaction import with_handling_reaction
 
 from nonebot_plugin_majsoul.config import conf
-from nonebot_plugin_majsoul.errors import BadRequestError
-from nonebot_plugin_majsoul.interceptors.handle_error import handle_error
 from .data.api import paifuya_api as api
 from .data.models.game_record import GameRecord
 from .data.models.player_info import PlayerInfo, PlayerLevel
@@ -26,6 +27,7 @@ from .mappers.player_num import map_player_num
 from .mappers.player_rank import map_player_rank
 from .parsers.limit_of_games import try_parse_limit_of_games
 from .parsers.time_span import try_parse_time_span
+from ..errors import error_handlers
 from ..utils.my_executor import run_in_my_executor
 
 if conf.majsoul_font:
@@ -75,13 +77,15 @@ def make_handler(player_num: PlayerNum):
 
 four_player_majsoul_pt_plot_matcher = on_command("雀魂PT推移图", aliases={"雀魂PT图"})
 four_player_majsoul_pt_plot_records = make_handler(PlayerNum.four)
-four_player_majsoul_pt_plot_records = handle_error(four_player_majsoul_pt_plot_matcher)(
+four_player_majsoul_pt_plot_records = with_handling_reaction()(four_player_majsoul_pt_plot_records)
+four_player_majsoul_pt_plot_records = handle_error(error_handlers)(
     four_player_majsoul_pt_plot_records)
 four_player_majsoul_pt_plot_matcher.append_handler(four_player_majsoul_pt_plot_records)
 
 three_player_majsoul_pt_plot_matcher = on_command("雀魂三麻PT推移图", aliases={"雀魂三麻PT图"})
 three_player_majsoul_pt_plot_records = make_handler(PlayerNum.three)
-three_player_majsoul_pt_plot_records = handle_error(three_player_majsoul_pt_plot_matcher)(
+three_player_majsoul_pt_plot_records = with_handling_reaction()(three_player_majsoul_pt_plot_records)
+three_player_majsoul_pt_plot_records = handle_error(error_handlers)(
     three_player_majsoul_pt_plot_records)
 three_player_majsoul_pt_plot_matcher.append_handler(three_player_majsoul_pt_plot_records)
 
@@ -180,10 +184,7 @@ async def handle_majsoul_pt_plot(nickname: str, player_num: PlayerNum, *,
 
     players = await api[player_num].search_player(nickname)
     if len(players) == 0:
-        await MessageFactory(
-            Text("没有查询到该角色在金之间以上的对局数据呢~")
-        ).send(reply=True)
-        return
+        raise QueryError("没有查询到该角色在金之间以上的对局数据呢~")
 
     player = players[0]
 
@@ -229,10 +230,7 @@ async def handle_majsoul_pt_plot(nickname: str, player_num: PlayerNum, *,
                     break
     except HTTPStatusError as e:
         if e.response.status_code == 404:
-            await MessageFactory(
-                Text("没有查询到该角色在金之间以上的对局数据呢~")
-            ).send(reply=True)
-            return
+            raise QueryError("没有查询到该角色在金之间以上的对局数据呢~")
         else:
             raise e
 

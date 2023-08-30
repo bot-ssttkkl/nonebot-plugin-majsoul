@@ -1,6 +1,5 @@
 from nonebot import logger
 
-from .downloader import download_paipu
 from ..config import conf
 
 if not conf.majsoul_username:
@@ -10,31 +9,32 @@ else:
     import re
     from asyncio import wait_for
 
-    from nonebot import on_command, logger, require
-    from nonebot.adapters.onebot.v11 import Bot, GroupMessageEvent, MessageEvent
+    from nonebot import on_command, Bot
+    from nonebot.internal.adapter import Event
     from nonebot.params import CommandArg
+    from ssttkkl_nonebot_utils.errors.errors import BadRequestError, QueryError
+    from ssttkkl_nonebot_utils.interceptor.handle_error import handle_error
+    from ssttkkl_nonebot_utils.interceptor.with_handling_reaction import with_handling_reaction
+    from ssttkkl_nonebot_utils.nonebot import default_command_start
+    from ssttkkl_nonebot_utils.platform import platform_func
     from tensoul.downloader import MajsoulDownloadError
 
-    from ..errors import BadRequestError
-    from ..interceptors.handle_error import handle_error
-    from ..utils.nonebot import default_cmd_start
+    from .downloader import download_paipu
+    from ..errors import error_handlers
 
     uuid_reg = re.compile(r"\d{6}-[\da-fA-F]{8}-[\da-fA-F]{4}-[\da-fA-F]{4}-[\da-fA-F]{4}-[\da-fA-F]{12}")
-
-    require("nonebot_plugin_gocqhttp_cross_machine_upload_file")
-
-    from nonebot_plugin_gocqhttp_cross_machine_upload_file import upload_group_file, upload_private_file
 
     query_majsoul_paipu_matcher = on_command("下载雀魂牌谱")
 
 
     @query_majsoul_paipu_matcher.handle()
-    @handle_error(query_majsoul_paipu_matcher)
-    async def majsoul_paipu(bot: Bot, event: MessageEvent, args=CommandArg()):
+    @handle_error(error_handlers)
+    @with_handling_reaction()
+    async def majsoul_paipu(bot: Bot, event: Event, args=CommandArg()):
         plain_args = args.extract_plain_text()
         mat = uuid_reg.search(plain_args)
         if not mat:
-            raise BadRequestError(f"使用方式：{default_cmd_start}下载雀魂牌谱 <牌谱网址>")
+            raise BadRequestError(f"使用方式：{default_command_start}下载雀魂牌谱 <牌谱网址>")
 
         uuid = mat.group(0)
 
@@ -48,7 +48,7 @@ else:
         except MajsoulDownloadError as e:
             logger.opt(colors=True).warning(f"Failed to download paipu <y>{uuid}</y>, code: {e.code}")
             if e.code == 1203:
-                raise BadRequestError("牌谱不存在") from e
+                raise QueryError("牌谱不存在") from e
             else:
                 raise e
 
@@ -63,7 +63,4 @@ else:
 
         data = json.dumps(record, ensure_ascii=False).encode("utf-8")
 
-        if isinstance(event, GroupMessageEvent):
-            await upload_group_file(bot, event.group_id, filename, data)
-        else:
-            await upload_private_file(bot, event.user_id, filename, data)
+        platform_func(bot).upload_file(bot, event, filename, data)

@@ -7,10 +7,11 @@ from httpx import HTTPStatusError
 from nonebot import on_command
 from nonebot.internal.adapter import Event
 from nonebot_plugin_saa import MessageFactory
+from ssttkkl_nonebot_utils.errors.errors import BadRequestError, QueryError
+from ssttkkl_nonebot_utils.interceptor.handle_error import handle_error
+from ssttkkl_nonebot_utils.interceptor.with_handling_reaction import with_handling_reaction
 
 from nonebot_plugin_majsoul.config import conf
-from nonebot_plugin_majsoul.errors import BadRequestError
-from nonebot_plugin_majsoul.interceptors.handle_error import handle_error
 from .data.api import paifuya_api as api
 from .data.models.player_num import PlayerNum
 from .data.models.room_rank import all_four_player_room_rank, all_three_player_room_rank, RoomRank
@@ -20,6 +21,7 @@ from .mappers.room_rank import map_room_rank
 from .parsers.limit_of_games import try_parse_limit_of_games
 from .parsers.room_rank import try_parse_room_rank
 from .parsers.time_span import try_parse_time_span
+from ..errors import error_handlers
 
 
 def make_handler(player_num: PlayerNum):
@@ -69,12 +71,14 @@ def make_handler(player_num: PlayerNum):
 
 four_player_majsoul_info_matcher = on_command('雀魂信息', aliases={'雀魂查询'})
 four_player_majsoul_info = make_handler(PlayerNum.four)
-four_player_majsoul_info = handle_error(four_player_majsoul_info_matcher)(four_player_majsoul_info)
+four_player_majsoul_info = with_handling_reaction()(four_player_majsoul_info)
+four_player_majsoul_info = handle_error(error_handlers)(four_player_majsoul_info)
 four_player_majsoul_info_matcher.append_handler(four_player_majsoul_info)
 
 three_player_majsoul_info_matcher = on_command('雀魂三麻信息', aliases={'雀魂三麻查询'})
 three_player_majsoul_info = make_handler(PlayerNum.three)
-three_player_majsoul_info = handle_error(three_player_majsoul_info_matcher)(three_player_majsoul_info)
+three_player_majsoul_info = with_handling_reaction()(three_player_majsoul_info)
+three_player_majsoul_info = handle_error(error_handlers)(three_player_majsoul_info)
 three_player_majsoul_info_matcher.append_handler(three_player_majsoul_info)
 
 
@@ -102,7 +106,7 @@ async def handle_majsoul_info(nickname: str, player_num: PlayerNum, *,
     with StringIO() as sio:
         players = await api[player_num].search_player(nickname)
         if len(players) == 0:
-            sio.write("没有查询到该角色在金之间以上的对局数据呢~")
+            raise QueryError("没有查询到该角色在金之间以上的对局数据呢~")
         else:
             if len(players) > 1:
                 sio.write("查询到多条角色昵称呢~，若输出不是您想查找的昵称，请补全查询昵称。\n")
@@ -141,7 +145,7 @@ async def handle_majsoul_info(nickname: str, player_num: PlayerNum, *,
 
             room_rank_text = map_room_rank(room_rank)
             if player_stats is None:
-                sio.write(f"没有查询到{room_rank_text}的对局数据呢~")
+                raise QueryError(f"没有查询到{room_rank_text}的对局数据呢~")
             else:
                 map_player_stats(sio, player_stats, room_rank_text, player_num)
                 sio.write('\n')

@@ -1,8 +1,8 @@
 import re
 from typing import Optional
 
-from nonebot_plugin_majsoul.errors import BadRequestError
-from nonebot_plugin_majsoul.utils.decode_integer import decode_integer
+from ssttkkl_nonebot_utils.errors.errors import BadRequestError
+from ssttkkl_nonebot_utils.integer import decode_integer
 
 
 def try_parse_limit_of_games(raw: str) -> Optional[int]:
