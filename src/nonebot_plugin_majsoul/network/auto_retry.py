@@ -20,9 +20,11 @@ def auto_retry(error: Union[Type[Exception], Sequence[Type[Exception]]],
                     return await func(*args, **kwargs)
                 except error as e:
                     if before_retry:
-                        await before_retry()
-                    logger.error(f"Retrying... {i + 1}/10")
-                    logger.exception(e)
+                        try:
+                            await before_retry()
+                        except error as e2:
+                            logger.opt(exception=e2).error(f"Error occurred when retrying {i + 1}/10")
+                    logger.opt(exception=e).error(f"Retrying... {i + 1}/10")
                     err = e
                 except Exception as e:
                     raise e
