@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "nonebot-plugin-majsoul"
-version = "0.2.4"
+version = "0.2.5"
 description = "NoneBot2 雀魂信息查询插件"
 authors = ["ssttkkl <huang.wen.long@hotmail.com>"]
 license = "AGPL-3.0"
