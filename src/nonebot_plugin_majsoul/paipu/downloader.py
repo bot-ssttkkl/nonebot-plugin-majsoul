@@ -36,7 +36,7 @@ async def restart_downloader():
 
 
 @auto_retry(DownloaderNotReadyError, restart_downloader)
-def get_downloader():
+async def get_downloader():
     if _downloader is None:
         raise DownloaderNotReadyError()
     return _downloader
@@ -44,7 +44,7 @@ def get_downloader():
 
 @auto_retry(ConnectionClosedError, restart_downloader)
 async def download_paipu(uuid: str):
-    return await get_downloader().download(uuid)
+    return await (await get_downloader()).download(uuid)
 
 
 @get_driver().on_startup
