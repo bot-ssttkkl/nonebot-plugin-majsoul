@@ -11,7 +11,7 @@ packages = [
 
 [tool.poetry.dependencies]
 python = "^3.9"
-nonebot2 = {extras = ["httpx"], version = "^2.0.0"}
+nonebot2 = {extras = ["httpx"], version = ">=2.0.0"}
 nonebot-plugin-send-anything-anywhere = ">=0.2.1"
 ssttkkl-nonebot-utils = ">=0.1.22"
 tzlocal = ">=4.2"
@@ -32,6 +32,7 @@ pydantic-settings = "^2.4.0"
 
 nonebot-adapter-onebot = "*"
 nonebot-adapter-console = "*"
+nonebot2 = {extras = ["fastapi"], version = ">=2.0.0"}
 
 [build-system]
 requires = ["poetry-core"]
