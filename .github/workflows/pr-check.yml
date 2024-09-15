@@ -28,7 +28,7 @@ jobs:
         pip install poetry
         poetry export --with=dev --without-hashes -o requirements.txt
         pip install -r requirements.txt
-        pip install ${{ matrix.pydantic }}
+        pip install "${{ matrix.pydantic }}"
     - name: Test with pytest
       run: pytest
 
