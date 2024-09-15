@@ -11,7 +11,6 @@ require("nonebot_plugin_saa")
 require("ssttkkl_nonebot_utils")
 
 from ssttkkl_nonebot_utils.nonebot import default_command_start
-
 from .config import Config
 
 __usage__ = f"""
@@ -28,7 +27,7 @@ __usage__ = f"""
 详细说明：参见https://github.com/bot-ssttkkl/nonebot-plugin-majsoul
 """.strip()
 
-from nonebot.plugin import PluginMetadata
+from nonebot.plugin import PluginMetadata, inherit_supported_adapters
 
 __plugin_meta__ = PluginMetadata(
     name='雀魂查询',
@@ -37,8 +36,5 @@ __plugin_meta__ = PluginMetadata(
     type="application",
     config=Config,
     homepage="https://github.com/bot-ssttkkl/nonebot-plugin-majsoul",
-    supported_adapters={"~onebot.v11", "~onebot.v12", "~qqguild", "~telegram", "~kaiheila"}
+    supported_adapters=inherit_supported_adapters("nonebot_plugin_saa"),
 )
-
-from . import paifuya
-from . import paipu

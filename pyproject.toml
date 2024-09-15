@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "nonebot-plugin-majsoul"
-version = "0.2.5"
+version = "0.2.6"
 description = "NoneBot2 雀魂信息查询插件"
 authors = ["ssttkkl <huang.wen.long@hotmail.com>"]
 license = "AGPL-3.0"
@@ -11,14 +11,28 @@ packages = [
 
 [tool.poetry.dependencies]
 python = "^3.9"
-nonebot2 = {extras = ["httpx"], version = "^2.0.0"}
+nonebot2 = {extras = ["httpx"], version = ">=2.0.0"}
 nonebot-plugin-send-anything-anywhere = ">=0.2.1"
-ssttkkl-nonebot-utils = ">=0.1.5"
+ssttkkl-nonebot-utils = ">=0.1.22"
 tzlocal = ">=4.2"
 monthdelta = ">=0.9.1"
 icmplib = ">=3.0.3"
 matplotlib = ">=3.6.2"
 tensoul = ">=0.1.0"
+
+[tool.poetry.group.dev.dependencies]
+setuptools = "^68.1.2"
+nb-cli = "*"
+
+nonebug = "^0.3.5"
+pytest = "^7.4.3"
+pytest-asyncio = "^0.21.1"
+pytest-cov = "^4.1.0"
+pydantic-settings = "^2.4.0"
+
+nonebot-adapter-onebot = "*"
+nonebot-adapter-console = "*"
+nonebot2 = {extras = ["fastapi"], version = ">=2.0.0"}
 
 [build-system]
 requires = ["poetry-core"]

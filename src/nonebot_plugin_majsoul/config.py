@@ -1,5 +1,4 @@
-from nonebot import get_driver
-from pydantic import BaseSettings
+from ssttkkl_nonebot_utils.config_loader import BaseSettings, load_conf
 
 
 class Config(BaseSettings):
@@ -15,4 +14,4 @@ class Config(BaseSettings):
         extra = "ignore"
 
 
-conf = Config(**get_driver().config.dict())
+conf = load_conf(Config)
