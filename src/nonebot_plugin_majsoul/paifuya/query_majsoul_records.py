@@ -38,7 +38,7 @@ def make_handler(player_num: PlayerNum):
         unconsumed_args = []
         kwargs = {}
 
-        for arg in args[1:]:
+        for arg in args:
             if "room_rank" not in kwargs:
                 room_rank = try_parse_room_rank(arg)
                 if room_rank is not None:
@@ -191,7 +191,7 @@ async def handle_majsoul_records(nickname: str, player_num: PlayerNum, *,
     else:
         adapter_name = current_bot.get().adapter.get_name()
 
-        if adapter_name in AggregatedMessageFactory.sender:
+        if conf.majsoul_send_aggregated_message and adapter_name in AggregatedMessageFactory.sender:
             await AggregatedMessageFactory(msgs).send()
         else:
             for msg in msgs:

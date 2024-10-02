@@ -49,7 +49,7 @@ def make_handler(player_num: PlayerNum):
         unconsumed_args = []
         kwargs = {}
 
-        for arg in args[1:]:
+        for arg in args:
             if "time_span" not in kwargs:
                 time_span = try_parse_time_span(arg)
                 if time_span is not None:
