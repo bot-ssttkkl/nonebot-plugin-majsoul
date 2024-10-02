@@ -38,3 +38,6 @@ __plugin_meta__ = PluginMetadata(
     homepage="https://github.com/bot-ssttkkl/nonebot-plugin-majsoul",
     supported_adapters=inherit_supported_adapters("nonebot_plugin_saa"),
 )
+
+from . import paifuya  # noqa
+from . import paipu  # noqa
