@@ -10,6 +10,7 @@ from nonebot_plugin_saa import MessageFactory
 from ssttkkl_nonebot_utils.errors.errors import BadRequestError, QueryError
 from ssttkkl_nonebot_utils.interceptor.handle_error import handle_error
 from ssttkkl_nonebot_utils.interceptor.with_handling_reaction import with_handling_reaction
+from ssttkkl_nonebot_utils.nonebot import default_command_start
 
 from nonebot_plugin_majsoul.config import conf
 from .data.api import paifuya_api as api
@@ -21,7 +22,9 @@ from .mappers.room_rank import map_room_rank
 from .parsers.limit_of_games import try_parse_limit_of_games
 from .parsers.room_rank import try_parse_room_rank
 from .parsers.time_span import try_parse_time_span
+from ..data.account_binding import AccountBinding
 from ..errors import error_handlers
+from ..utils.user import get_uid
 
 
 def make_handler(player_num: PlayerNum):
@@ -29,16 +32,10 @@ def make_handler(player_num: PlayerNum):
         args = event.get_message().extract_plain_text().split()
         cmd, args = args[0], args[1:]
 
-        if len(args) == 0:
-            raise BadRequestError(f"指令格式：{cmd} <雀魂账号> [<房间类型>] [最近<数量>场] [最近<数量>{{天|周|个月|年}}]")
-
-        nickname = args[0]
-        if len(nickname) > 15:
-            raise BadRequestError("昵称长度超过雀魂最大限制")
-
+        unconsumed_args = []
         kwargs = {}
 
-        for arg in args[1:]:
+        for arg in args:
             if "room_rank" not in kwargs:
                 room_rank = try_parse_room_rank(arg)
                 if room_rank is not None:
@@ -60,6 +57,18 @@ def make_handler(player_num: PlayerNum):
                     kwargs["limit"] = limit
                     continue
 
+            unconsumed_args.append(arg)
+
+        if len(unconsumed_args) > 0 and unconsumed_args[0]:
+            nickname = args[0]
+            if len(nickname) > 15:
+                raise BadRequestError("昵称长度超过雀魂最大限制")
+        else:
+            nickname = await AccountBinding.get(await get_uid())
+
+        if not nickname:
+            raise BadRequestError("请输入雀魂账号")
+
         coro = handle_majsoul_info(nickname, player_num, **kwargs)
         if conf.majsoul_query_timeout:
             await wait_for(coro, timeout=conf.majsoul_query_timeout)
@@ -70,12 +79,16 @@ def make_handler(player_num: PlayerNum):
 
 
 four_player_majsoul_info_matcher = on_command('雀魂信息', aliases={'雀魂查询'})
+four_player_majsoul_info_matcher.__help_info__ = (f"{default_command_start}雀魂信息 <雀魂账号> "
+                                                  f"[<房间类型>] [最近<数量>场] [最近<数量>{{天|周|个月|年}}]")
 four_player_majsoul_info = make_handler(PlayerNum.four)
 four_player_majsoul_info = with_handling_reaction()(four_player_majsoul_info)
 four_player_majsoul_info = handle_error(error_handlers)(four_player_majsoul_info)
 four_player_majsoul_info_matcher.append_handler(four_player_majsoul_info)
 
 three_player_majsoul_info_matcher = on_command('雀魂三麻信息', aliases={'雀魂三麻查询'})
+three_player_majsoul_info_matcher.__help_info__ = (f"{default_command_start}雀魂三麻信息 <雀魂账号> "
+                                                   f"[<房间类型>] [最近<数量>场] [最近<数量>{{天|周|个月|年}}]")
 three_player_majsoul_info = make_handler(PlayerNum.three)
 three_player_majsoul_info = with_handling_reaction()(three_player_majsoul_info)
 three_player_majsoul_info = handle_error(error_handlers)(three_player_majsoul_info)
