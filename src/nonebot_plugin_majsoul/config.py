@@ -10,6 +10,8 @@ class Config(BaseSettings):
     majsoul_font: str = ""
     majsoul_font_path: str = ""
 
+    majsoul_send_aggregated_message: bool = True
+
     class Config:
         extra = "ignore"
 

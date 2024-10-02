@@ -44,8 +44,6 @@ _✨ 雀魂信息查询插件 ✨_
 
 ![最近对局](img/records.png)
 
-![最近对局（消息）](img/records_forward.png)
-
 #### 绘制个人PT推移图
 
 **若绘图出现乱码或是需要更换绘图字体，请参考下文进行字体配置**
@@ -89,6 +87,12 @@ _✨ 雀魂信息查询插件 ✨_
 ### majsoul_font_path
 
 绘图用的字体文件路径
+
+### majsoul_send_aggregated_message
+
+是否使用合并转发消息发送查询对局的结果
+
+默认值：`True`
 
 ### majsoul_username
 
