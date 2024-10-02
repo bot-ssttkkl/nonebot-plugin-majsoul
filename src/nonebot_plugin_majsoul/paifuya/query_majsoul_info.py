@@ -20,11 +20,10 @@ from .mappers.player_extended_stats import map_player_extended_stats
 from .mappers.player_stats import map_player_stats
 from .mappers.room_rank import map_room_rank
 from .parsers.limit_of_games import try_parse_limit_of_games
+from .parsers.name import try_parse_name, get_name_in_unconsumed_args
 from .parsers.room_rank import try_parse_room_rank
 from .parsers.time_span import try_parse_time_span
-from ..data.account_binding import AccountBinding
 from ..errors import error_handlers
-from ..utils.user import get_uid
 
 
 def make_handler(player_num: PlayerNum):
@@ -57,19 +56,23 @@ def make_handler(player_num: PlayerNum):
                     kwargs["limit"] = limit
                     continue
 
+            if "nickname" not in kwargs:
+                name = try_parse_name(arg)
+                if name is not None:
+                    kwargs["nickname"] = name
+                    continue
+
             unconsumed_args.append(arg)
 
-        if len(unconsumed_args) > 0 and unconsumed_args[0]:
-            nickname = args[0]
-            if len(nickname) > 15:
-                raise BadRequestError("昵称长度超过雀魂最大限制")
-        else:
-            nickname = await AccountBinding.get(await get_uid())
+        if "nickname" not in kwargs:
+            nickname = await get_name_in_unconsumed_args(unconsumed_args)
 
-        if not nickname:
-            raise BadRequestError("请输入雀魂账号")
+            if not nickname:
+                raise BadRequestError("请输入雀魂账号")
 
-        coro = handle_majsoul_info(nickname, player_num, **kwargs)
+            kwargs["nickname"] = nickname
+
+        coro = handle_majsoul_info(player_num=player_num, **kwargs)
         if conf.majsoul_query_timeout:
             await wait_for(coro, timeout=conf.majsoul_query_timeout)
         else:

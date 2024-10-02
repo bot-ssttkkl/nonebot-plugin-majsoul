@@ -12,7 +12,6 @@ from matplotlib.figure import Figure
 from nonebot import on_command
 from nonebot.internal.adapter import Event
 from nonebot_plugin_saa import MessageFactory, Image
-from nonebot_plugin_user import User
 from ssttkkl_nonebot_utils.errors.errors import BadRequestError, QueryError
 from ssttkkl_nonebot_utils.interceptor.handle_error import handle_error
 from ssttkkl_nonebot_utils.interceptor.with_handling_reaction import with_handling_reaction
@@ -28,11 +27,10 @@ from .data.models.room_rank import all_four_player_room_rank, all_three_player_r
 from .mappers.player_num import map_player_num
 from .mappers.player_rank import map_player_rank
 from .parsers.limit_of_games import try_parse_limit_of_games
+from .parsers.name import get_name_in_unconsumed_args, try_parse_name
 from .parsers.time_span import try_parse_time_span
-from ..data.account_binding import AccountBinding
 from ..errors import error_handlers
 from ..utils.my_executor import run_in_my_executor
-from ..utils.user import get_uid
 
 if conf.majsoul_font:
     plt.rcParams['font.sans-serif'] = conf.majsoul_font
@@ -44,7 +42,7 @@ if conf.majsoul_font_path:
 
 
 def make_handler(player_num: PlayerNum):
-    async def majsoul_pt_plot(event: Event, user: User):
+    async def majsoul_pt_plot(event: Event):
         args = event.get_message().extract_plain_text().split()
         cmd, args = args[0], args[1:]
 
@@ -64,19 +62,23 @@ def make_handler(player_num: PlayerNum):
                     kwargs["limit"] = limit
                     continue
 
+            if "nickname" not in kwargs:
+                name = try_parse_name(arg)
+                if name is not None:
+                    kwargs["nickname"] = name
+                    continue
+
             unconsumed_args.append(arg)
 
-        if len(unconsumed_args) > 0 and unconsumed_args[0]:
-            nickname = args[0]
-            if len(nickname) > 15:
-                raise BadRequestError("昵称长度超过雀魂最大限制")
-        else:
-            nickname = await AccountBinding.get(await get_uid())
+        if "nickname" not in kwargs:
+            nickname = await get_name_in_unconsumed_args(unconsumed_args)
 
-        if not nickname:
-            raise BadRequestError("请输入雀魂账号")
+            if not nickname:
+                raise BadRequestError("请输入雀魂账号")
 
-        coro = handle_majsoul_pt_plot(nickname, player_num, **kwargs)
+            kwargs["nickname"] = nickname
+
+        coro = handle_majsoul_pt_plot(player_num=player_num, **kwargs)
         if conf.majsoul_query_timeout:
             await wait_for(coro, timeout=conf.majsoul_query_timeout)
         else:
