@@ -1,4 +1,4 @@
-from pydantic import BaseModel, validator, Field
+from pydantic import BaseModel, validator
 
 from .player_rank import PlayerRank
 

@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "nonebot-plugin-majsoul"
-version = "0.2.7"
+version = "0.2.8"
 description = "NoneBot2 雀魂信息查询插件"
 authors = ["ssttkkl <huang.wen.long@hotmail.com>"]
 license = "AGPL-3.0"
@@ -19,6 +19,8 @@ monthdelta = ">=0.9.1"
 icmplib = ">=3.0.3"
 matplotlib = ">=3.6.2"
 tensoul = ">=0.1.0"
+nonebot-plugin-orm = ">=0.7.0, <1.0.0"
+nonebot-plugin-user = "^0.4.3"
 
 [tool.poetry.group.dev.dependencies]
 setuptools = "^68.1.2"
@@ -33,6 +35,11 @@ pydantic-settings = "^2.4.0"
 nonebot-adapter-onebot = "*"
 nonebot-adapter-console = "*"
 nonebot2 = {extras = ["fastapi"], version = ">=2.0.0"}
+nonebot-plugin-orm = {extras = ["default"], version = "^0.7.6"}
+
+[tool.nonebot]
+plugins = ["nonebot_plugin_majsoul"]
+plugin_dirs = []
 
 [build-system]
 requires = ["poetry-core"]
