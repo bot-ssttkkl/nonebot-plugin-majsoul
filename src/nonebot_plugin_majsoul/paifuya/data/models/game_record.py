@@ -1,8 +1,9 @@
 from datetime import datetime, timezone
 from typing import List
 
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field
 
+from ssttkkl_nonebot_utils.pyc import field_validator
 from .player_rank import PlayerRank
 from .room_rank import RoomRank
 
@@ -14,7 +15,7 @@ class GamePlayer(BaseModel):
     score: int
     pt: int = Field(alias="gradingScore")
 
-    @validator("rank", pre=True, allow_reuse=True)
+    @field_validator("rank", mode="before")
     def parse_rank(cls, v):
         if isinstance(v, PlayerRank):
             return v
@@ -31,7 +32,7 @@ class GameRecord(BaseModel):
     end_time: datetime = Field(alias="endTime")
     players: List[GamePlayer]
 
-    @validator("start_time", "end_time", pre=True, allow_reuse=True)
+    @field_validator("start_time", "end_time", mode="before")
     def parse_timestamp(cls, v):
         if isinstance(v, int) or isinstance(v, float):
             return datetime.fromtimestamp(v, timezone.utc)
