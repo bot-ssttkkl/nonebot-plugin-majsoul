@@ -24,8 +24,9 @@ prober = HostProber([
 
 
 class PaifuyaApi:
-    def __init__(self, baseurl):
+    def __init__(self, baseurl: str, player_num: PlayerNum):
         self._baseurl = baseurl
+        self.player_num = player_num
 
         async def req_hook(request):
             logger.trace(f"Request: {request.method} {request.url} - Waiting for response")
@@ -54,7 +55,9 @@ class PaifuyaApi:
             URL(f"https://{prober.host}/{self._baseurl}/search_player/{nickname}"),
             params={"limit": limit}
         )
-        return [PlayerInfo.parse_obj(x) for x in resp.json()]
+        players = [PlayerInfo.parse_obj(x) for x in resp.json()]
+        players = [p for p in players if p.level.id.player_num == self.player_num]
+        return players
 
     @auto_retry(HTTPError, before_retry=partial(prober.select_host, exclude_current=True))
     async def player_stats(
@@ -113,8 +116,8 @@ class PaifuyaApi:
             end_time = records[-1].start_time - timedelta(seconds=1)
 
 
-four_player_api = PaifuyaApi(f"api/v2/pl4")
-three_player_api = PaifuyaApi(f"api/v2/pl3")
+four_player_api = PaifuyaApi(f"api/v2/pl4", PlayerNum.four)
+three_player_api = PaifuyaApi(f"api/v2/pl3", PlayerNum.three)
 
 paifuya_api = {
     PlayerNum.four: four_player_api,

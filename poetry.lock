@@ -2056,13 +2056,13 @@ typing-extensions = ">=4.0.0,<5.0.0"
 
 [[package]]
 name = "nonebot-plugin-access-control-api"
-version = "1.2.0"
+version = "1.2.1"
 description = ""
 optional = false
 python-versions = "<4.0,>=3.8"
 files = [
-    {file = "nonebot_plugin_access_control_api-1.2.0-py3-none-any.whl", hash = "sha256:bb534cebb07a02c51fdbbc9e222979e143cc891f7b3464b46fcf79b6a0d2629e"},
-    {file = "nonebot_plugin_access_control_api-1.2.0.tar.gz", hash = "sha256:e546fc3390ddbcb0e496297dcd50fb38830cf133112467bc2d12b6a9440dc781"},
+    {file = "nonebot_plugin_access_control_api-1.2.1-py3-none-any.whl", hash = "sha256:2ced0cd12f1c4f3e52c367e4f8995390f932af1b9cb6cdc52d5747c83b9245d4"},
+    {file = "nonebot_plugin_access_control_api-1.2.1.tar.gz", hash = "sha256:bff4e4b2305fd7a0d86cd4fd6fb2bf2f2ee8fc76ed6abc594db911c4526de25f"},
 ]
 
 [package.dependencies]
@@ -3887,4 +3887,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.9"
-content-hash = "40cd2a66f9520d9e07fce765d7ba6adc060745cce4f3ddacd7caaf935a127808"
+content-hash = "e4bea1563995cc4e4df7e45b49fde49f90740768fff05fc10bf517ef5282d477"

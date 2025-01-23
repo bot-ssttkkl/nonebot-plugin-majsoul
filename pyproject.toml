@@ -21,7 +21,7 @@ matplotlib = ">=3.6.2"
 tensoul = ">=0.1.0"
 nonebot-plugin-orm = ">=0.7.0, <1.0.0"
 nonebot-plugin-user = "^0.4.3"
-nonebot-plugin-access-control-api = "^1.2.0"
+nonebot-plugin-access-control-api = "^1.2.1"
 
 [tool.poetry.group.dev.dependencies]
 setuptools = "^68.1.2"

@@ -11,6 +11,7 @@ require("nonebot_plugin_saa")
 require("nonebot_plugin_orm")
 require("nonebot_plugin_user")
 require("ssttkkl_nonebot_utils")
+require("nonebot_plugin_access_control_api")
 
 from . import paifuya  # noqa
 from . import paipu  # noqa
