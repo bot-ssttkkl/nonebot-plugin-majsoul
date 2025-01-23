@@ -12,7 +12,6 @@ from ssttkkl_nonebot_utils.interceptor.handle_error import handle_error
 from ssttkkl_nonebot_utils.interceptor.with_handling_reaction import with_handling_reaction
 from ssttkkl_nonebot_utils.nonebot import default_command_start
 
-from nonebot_plugin_majsoul.config import conf
 from .data.api import paifuya_api as api
 from .data.models.player_num import PlayerNum
 from .data.models.room_rank import all_four_player_room_rank, all_three_player_room_rank, RoomRank
@@ -23,6 +22,8 @@ from .parsers.limit_of_games import try_parse_limit_of_games
 from .parsers.name import try_parse_name, get_name_in_unconsumed_args
 from .parsers.room_rank import try_parse_room_rank
 from .parsers.time_span import try_parse_time_span
+from ..ac import query_info_service
+from ..config import conf
 from ..errors import error_handlers
 
 
@@ -82,6 +83,7 @@ def make_handler(player_num: PlayerNum):
 
 
 four_player_majsoul_info_matcher = on_command('雀魂信息', aliases={'雀魂查询'})
+query_info_service.patch_matcher(four_player_majsoul_info_matcher)
 four_player_majsoul_info_matcher.__help_info__ = (f"{default_command_start}雀魂信息 <雀魂账号> "
                                                   f"[<房间类型>] [最近<数量>场] [最近<数量>{{天|周|个月|年}}]")
 four_player_majsoul_info = make_handler(PlayerNum.four)
@@ -90,6 +92,7 @@ four_player_majsoul_info = handle_error(error_handlers)(four_player_majsoul_info
 four_player_majsoul_info_matcher.append_handler(four_player_majsoul_info)
 
 three_player_majsoul_info_matcher = on_command('雀魂三麻信息', aliases={'雀魂三麻查询'})
+query_info_service.patch_matcher(three_player_majsoul_info_matcher)
 three_player_majsoul_info_matcher.__help_info__ = (f"{default_command_start}雀魂三麻信息 <雀魂账号> "
                                                    f"[<房间类型>] [最近<数量>场] [最近<数量>{{天|周|个月|年}}]")
 three_player_majsoul_info = make_handler(PlayerNum.three)
@@ -169,24 +172,25 @@ async def handle_majsoul_info(nickname: str, player_num: PlayerNum, *,
 
             sio.write("\nPS：本数据不包含金之间以下对局以及2019.11.29之前的对局")
 
-            with StringIO() as url:
-                if player_num == PlayerNum.four:
-                    url.write(f"https://amae-koromo.sapk.ch/player/{players[0].id}/")
-                else:
-                    url.write(f"https://ikeda.sapk.ch/player/{players[0].id}/")
-                url.write(".".join(map(lambda x: str(x.value), room_rank)))
-                if not default_start_time:
-                    url.write("/")
-                    url.write(start_time.strftime("%Y-%m-%d"))
-                if not default_end_time:
-                    url.write("/")
-                    url.write(end_time.strftime("%Y-%m-%d"))
-                if not default_limit:
-                    url.write(f"?limit={limit}")
+            if conf.majsoul_send_link:
+                with StringIO() as url:
+                    if player_num == PlayerNum.four:
+                        url.write(f"https://amae-koromo.sapk.ch/player/{players[0].id}/")
+                    else:
+                        url.write(f"https://ikeda.sapk.ch/player/{players[0].id}/")
+                    url.write(".".join(map(lambda x: str(x.value), room_rank)))
+                    if not default_start_time:
+                        url.write("/")
+                        url.write(start_time.strftime("%Y-%m-%d"))
+                    if not default_end_time:
+                        url.write("/")
+                        url.write(end_time.strftime("%Y-%m-%d"))
+                    if not default_limit:
+                        url.write(f"?limit={limit}")
 
-                sio.write("\n")
-                sio.write("更多信息：")
-                sio.write(url.getvalue())
+                    sio.write("\n")
+                    sio.write("更多信息：")
+                    sio.write(url.getvalue())
 
         msg = sio.getvalue()
         await MessageFactory(Text(msg)).send(reply=True)

@@ -17,7 +17,6 @@ from ssttkkl_nonebot_utils.interceptor.handle_error import handle_error
 from ssttkkl_nonebot_utils.interceptor.with_handling_reaction import with_handling_reaction
 from ssttkkl_nonebot_utils.nonebot import default_command_start
 
-from nonebot_plugin_majsoul.config import conf
 from .data.api import paifuya_api as api
 from .data.models.game_record import GameRecord
 from .data.models.player_info import PlayerInfo, PlayerLevel
@@ -29,6 +28,8 @@ from .mappers.player_rank import map_player_rank
 from .parsers.limit_of_games import try_parse_limit_of_games
 from .parsers.name import get_name_in_unconsumed_args, try_parse_name
 from .parsers.time_span import try_parse_time_span
+from ..ac import pt_plot_service
+from ..config import conf
 from ..errors import error_handlers
 from ..utils.my_executor import run_in_my_executor
 
@@ -88,6 +89,7 @@ def make_handler(player_num: PlayerNum):
 
 
 four_player_majsoul_pt_plot_matcher = on_command("雀魂PT图", aliases={"雀魂PT推移图"})
+pt_plot_service.patch_matcher(four_player_majsoul_pt_plot_matcher)
 four_player_majsoul_pt_plot_matcher.__help_info__ = (f"{default_command_start}雀魂PT图 <雀魂账号> "
                                                      f"[最近<数量>场] [最近<数量>{{天|周|个月|年}}]")
 four_player_majsoul_pt_plot_records = make_handler(PlayerNum.four)
@@ -97,6 +99,7 @@ four_player_majsoul_pt_plot_records = handle_error(error_handlers)(
 four_player_majsoul_pt_plot_matcher.append_handler(four_player_majsoul_pt_plot_records)
 
 three_player_majsoul_pt_plot_matcher = on_command("雀魂三麻PT图", aliases={"雀魂三麻PT推移图"})
+pt_plot_service.patch_matcher(three_player_majsoul_pt_plot_matcher)
 three_player_majsoul_pt_plot_matcher.__help_info__ = (f"{default_command_start}雀魂三麻PT图 <雀魂账号> "
                                                       f"[最近<数量>场] [最近<数量>{{天|周|个月|年}}]")
 three_player_majsoul_pt_plot_records = make_handler(PlayerNum.three)

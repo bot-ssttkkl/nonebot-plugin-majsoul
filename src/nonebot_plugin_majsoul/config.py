@@ -12,6 +12,8 @@ class Config(BaseSettings):
 
     majsoul_send_aggregated_message: bool = True
 
+    majsoul_send_link: bool = False
+
     class Config:
         extra = "ignore"
 

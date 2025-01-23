@@ -16,7 +16,6 @@ from ssttkkl_nonebot_utils.interceptor.handle_error import handle_error
 from ssttkkl_nonebot_utils.interceptor.with_handling_reaction import with_handling_reaction
 from ssttkkl_nonebot_utils.nonebot import default_command_start
 
-from nonebot_plugin_majsoul.config import conf
 from .data.api import paifuya_api as api
 from .data.models.game_record import GameRecord
 from .data.models.player_num import PlayerNum
@@ -25,6 +24,8 @@ from .mappers.game_record import map_game_record
 from .mappers.room_rank import map_room_rank
 from .parsers.name import try_parse_name, get_name_in_unconsumed_args
 from .parsers.room_rank import try_parse_room_rank
+from ..ac import query_records_service
+from ..config import conf
 from ..errors import error_handlers
 from ..utils.my_executor import run_in_my_executor
 from ..utils.rank import ranked
@@ -74,6 +75,7 @@ def make_handler(player_num: PlayerNum):
 
 
 four_player_majsoul_records_matcher = on_command("雀魂最近对局", aliases={'雀魂对局', '雀魂牌谱'})
+query_records_service.patch_matcher(four_player_majsoul_records_matcher)
 four_player_majsoul_records_matcher.__help_info__ = f"{default_command_start}雀魂最近对局 <雀魂账号> [<房间类型>]"
 four_player_majsoul_records = make_handler(PlayerNum.four)
 four_player_majsoul_records = with_handling_reaction()(four_player_majsoul_records)
@@ -81,6 +83,7 @@ four_player_majsoul_records = handle_error(error_handlers)(four_player_majsoul_r
 four_player_majsoul_records_matcher.append_handler(four_player_majsoul_records)
 
 three_player_majsoul_records_matcher = on_command("雀魂三麻最近对局", aliases={'雀魂三麻对局', '雀魂三麻牌谱'})
+query_records_service.patch_matcher(three_player_majsoul_records_matcher)
 three_player_majsoul_records_matcher.__help_info__ = f"{default_command_start}雀魂三麻最近对局 <雀魂账号> [<房间类型>]"
 three_player_majsoul_records = make_handler(PlayerNum.three)
 three_player_majsoul_records = with_handling_reaction()(three_player_majsoul_records)
@@ -177,14 +180,15 @@ async def handle_majsoul_records(nickname: str, player_num: PlayerNum, *,
                     map_game_record(sio, r, players[0].id)
                     msgs.append(MessageFactory(Text(sio.getvalue().strip())))
 
-            with StringIO() as url:
-                if player_num == PlayerNum.four:
-                    url.write(f"https://amae-koromo.sapk.ch/player/{players[0].id}/")
-                else:
-                    url.write(f"https://ikeda.sapk.ch/player/{players[0].id}/")
-                url.write(".".join(map(lambda x: str(x.value), room_rank)))
+            if conf.majsoul_send_link:
+                with StringIO() as url:
+                    if player_num == PlayerNum.four:
+                        url.write(f"https://amae-koromo.sapk.ch/player/{players[0].id}/")
+                    else:
+                        url.write(f"https://ikeda.sapk.ch/player/{players[0].id}/")
+                    url.write(".".join(map(lambda x: str(x.value), room_rank)))
 
-                msgs.append(MessageFactory(Text(f"更多信息：{url.getvalue()}")))
+                    msgs.append(MessageFactory(Text(f"更多信息：{url.getvalue()}")))
 
     if len(msgs) == 1:
         await msgs[0].send(reply=True)

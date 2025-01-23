@@ -5,13 +5,16 @@ from ssttkkl_nonebot_utils.errors.errors import BadRequestError
 from ssttkkl_nonebot_utils.interceptor.handle_error import handle_error
 from ssttkkl_nonebot_utils.nonebot import default_command_start
 
+from nonebot_plugin_majsoul.ac import majsoul_binding
 from nonebot_plugin_majsoul.data.account_binding import AccountBinding
 from nonebot_plugin_majsoul.errors import error_handlers
 from nonebot_plugin_majsoul.utils.user import get_uid
 
 binding = on_command("雀魂账号绑定")
+binding = majsoul_binding.patch_matcher(binding)
 binding.__help_info__ = f"查询当前绑定：{default_command_start}雀魂账号绑定    绑定账号：{default_command_start}雀魂账号绑定 <雀魂账号>"
 unset_binding = on_command("雀魂账号解绑")
+unset_binding = majsoul_binding.patch_matcher(unset_binding)
 unset_binding.__help_info__ = f"解除当前绑定：{default_command_start}雀魂账号解绑"
 
 
