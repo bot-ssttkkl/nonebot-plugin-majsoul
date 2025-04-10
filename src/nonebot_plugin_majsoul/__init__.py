@@ -37,6 +37,8 @@ __usage__ = f"""
 
 以上命令格式中，以<>包裹的表示一个参数，以[]包裹的表示一个可选项。
 
+默认情况下（命令不包含“三麻”）则为查询四麻数据，例如：{default_command_start}雀魂信息 <雀魂账号>。命令包含“三麻”时则为查询三麻数据，例如：{default_command_start}雀魂三麻信息 <雀魂账号>。
+
 详细说明：参见https://github.com/bot-ssttkkl/nonebot-plugin-majsoul
 """.strip()
 
