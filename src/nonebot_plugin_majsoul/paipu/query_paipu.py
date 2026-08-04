@@ -1,5 +1,4 @@
 from nonebot import logger
-
 from ..config import conf
 
 if not conf.majsoul_username:
@@ -22,7 +21,9 @@ else:
     from .downloader import download_paipu
     from ..errors import error_handlers
 
-    uuid_reg = re.compile(r"\d{6}-[\da-fA-F]{8}-[\da-fA-F]{4}-[\da-fA-F]{4}-[\da-fA-F]{4}-[\da-fA-F]{12}")
+    uuid_reg = re.compile(
+        r"\d{6}-[\da-fA-F]{8}-[\da-fA-F]{4}-[\da-fA-F]{4}-[\da-fA-F]{4}-[\da-fA-F]{12}"
+    )
 
     query_majsoul_paipu_matcher = on_command("下载雀魂牌谱")
 
@@ -33,34 +34,52 @@ else:
     async def majsoul_paipu(bot: Bot, event: Event, args=CommandArg()):
         plain_args = args.extract_plain_text()
         mat = uuid_reg.search(plain_args)
+
         if not mat:
-            raise BadRequestError(f"使用方式：{default_command_start}下载雀魂牌谱 <牌谱网址>")
+            raise BadRequestError(
+                f"使用方式：{default_command_start}下载雀魂牌谱 <牌谱网址>"
+            )
 
         uuid = mat.group(0)
 
         logger.opt(colors=True).info(f"Downloading paipu <y>{uuid}</y>")
+
         try:
             coro = download_paipu(uuid)
+
             if conf.majsoul_query_timeout:
                 record = await wait_for(coro, timeout=conf.majsoul_query_timeout)
             else:
                 record = await coro
+
         except MajsoulDownloadError as e:
-            logger.opt(colors=True).warning(f"Failed to download paipu <y>{uuid}</y>, code: {e.code}")
+            logger.opt(colors=True).warning(
+                f"Failed to download paipu <y>{uuid}</y>, code: {e.code}"
+            )
+
             if e.code == 1203:
                 raise QueryError("牌谱不存在") from e
-            else:
-                raise e
+            raise
 
-        time_str = record['title'][1]
+        time_str = record["title"][1]
         year = int(time_str[0:4])
         month = int(time_str[5:7])
         day = int(time_str[8:10])
         hour = int(time_str[11:13])
         minute = int(time_str[14:16])
 
-        filename = f"{record['title'][0]}_{year}_{month}_{day}_{hour}_{minute}（{'、'.join(record['name'])}）.json"
+        filename = (
+            f"{record['title'][0]}_{year}_{month}_{day}_{hour}_{minute}"
+            f"（{'、'.join(record['name'])}）.json"
+        )
 
         data = json.dumps(record, ensure_ascii=False).encode("utf-8")
 
-        platform_func(bot).upload_file(bot, event, filename, data)
+        uploader = platform_func(bot).upload_file
+
+        import inspect
+
+        if inspect.iscoroutinefunction(uploader):
+            await uploader(bot, event, filename, data)
+        else:
+            uploader(bot, event, filename, data)

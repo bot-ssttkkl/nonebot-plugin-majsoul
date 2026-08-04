@@ -46,11 +46,13 @@ async def get_downloader():
 async def download_paipu(uuid: str):
     return await (await get_downloader()).download(uuid)
 
-
+# 改用完全不阻塞 startup 防止卡住
 @get_driver().on_startup
 @logger.catch
 async def _init_downloader_on_startup():
-    await restart_downloader()
+    import asyncio
+    asyncio.create_task(restart_downloader())
+
 
 
 @get_driver().on_shutdown

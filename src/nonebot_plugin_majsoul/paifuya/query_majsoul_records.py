@@ -128,8 +128,12 @@ def draw_records_plot(bio: BytesIO, records: Sequence[GameRecord], player_id: in
     fig.savefig(bio, format='png')
 
 
-async def handle_majsoul_records(nickname: str, player_num: PlayerNum, *,
-                                 room_rank: Optional[AbstractSet[RoomRank]] = None):
+async def handle_majsoul_records(
+    nickname: str,
+    player_num: PlayerNum,
+    *,
+    room_rank: Optional[AbstractSet[RoomRank]] = None
+):
     if room_rank is None:
         if player_num == PlayerNum.four:
             room_rank = all_four_player_room_rank
@@ -141,55 +145,77 @@ async def handle_majsoul_records(nickname: str, player_num: PlayerNum, *,
 
     msgs: List[MessageFactory] = []
 
-    players = await api[player_num].search_player(nickname)
-    if len(players) == 0:
-        msgs.append(MessageFactory(Text("没有查询到该角色在金之间以上的对局数据呢~")))
+    # 查询玩家列表
+    if nickname.isdigit():
+        players = [await api[player_num].search_player_by_uid(int(nickname))]
     else:
+        players = await api[player_num].search_player(nickname)
+
+        # 优先大小写完全匹配
+        exact_players = [p for p in players if p.nickname == nickname]
+        if exact_players:
+            players = exact_players
+
+    # 没找到玩家
+    if not players:
+        msgs.append(MessageFactory(Text("没有查询到该角色在金之间以上的对局数据呢~")))
+        await msgs[0].send(reply=True)
+        return
+
+    #  多玩家逐个查询
+    all_text_blocks = []
+    all_images = []
+
+    for p in players:
         try:
             records = await api[player_num].player_records(
-                players[0].id,
+                p.id,
                 start_time,
                 end_time,
                 room_rank,
                 limit=10,
-                descending=True)
+                descending=True
+            )
         except HTTPStatusError as e:
             if e.response.status_code == 404:
                 records = None
             else:
                 raise e
 
-        msg = ""
-        if len(players) > 1:
-            msg += "查询到多条角色昵称呢~，若输出不是您想查找的昵称，请补全查询昵称。\n"
-        msg += f"昵称：{players[0].nickname}"
+        header = f"\n====== 昵称：{p.nickname} ======\n"
+        all_text_blocks.append(header)
 
-        room_rank_text = map_room_rank(room_rank)
+        # 没数据
         if not records:
-            msg += f"\n\n没有查询到{room_rank_text}的对局数据呢~"
+            all_text_blocks.append("没有查询到对局数据\n")
+            continue
 
-        msgs.append(MessageFactory(Text(msg.strip())))
+        #  绘图
+        with BytesIO() as bio:
+            await run_in_my_executor(draw_records_plot, bio, records, p.id)
+            all_images.append(bio.getvalue())
 
-        if records:
-            with BytesIO() as bio:
-                await run_in_my_executor(draw_records_plot, bio, records, players[0].id)
-                msgs.append(MessageFactory(Image(bio.getvalue())))
+        # 解析每局记录
+        for r in records:
+            with StringIO() as sio:
+                map_game_record(sio, r, p.id)
+                all_text_blocks.append(sio.getvalue().strip() + "\n")
 
-            for i, r in enumerate(records):
-                with StringIO() as sio:
-                    map_game_record(sio, r, players[0].id)
-                    msgs.append(MessageFactory(Text(sio.getvalue().strip())))
+    # 汇总输出文本
+    msg = ""
 
-            if conf.majsoul_send_link:
-                with StringIO() as url:
-                    if player_num == PlayerNum.four:
-                        url.write(f"https://amae-koromo.sapk.ch/player/{players[0].id}/")
-                    else:
-                        url.write(f"https://ikeda.sapk.ch/player/{players[0].id}/")
-                    url.write(".".join(map(lambda x: str(x.value), room_rank)))
+    if len(players) > 1:
+        msg += "查询到多个同名账号，已分别展示数据：\n\n"
 
-                    msgs.append(MessageFactory(Text(f"更多信息：{url.getvalue()}")))
+    msg += "\n".join(all_text_blocks)
 
+    msgs.append(MessageFactory(Text(msg.strip())))
+
+    # 输出图片
+    for img in all_images:
+        msgs.append(MessageFactory(Image(img)))
+
+    # 发送
     if len(msgs) == 1:
         await msgs[0].send(reply=True)
     else:
